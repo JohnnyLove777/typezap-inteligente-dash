@@ -6,7 +6,6 @@ const WebSocket = require('ws');
 const socketIo = require('socket.io');
 const QRCode = require('qrcode');
 const http = require('http');
-const fetch = require('node-fetch');
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });

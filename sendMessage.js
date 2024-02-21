@@ -11,12 +11,11 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const fsp = fs.promises; // Para operações assíncronas baseadas em promessas
-const writeFileAsync = promisify(fs.writeFile);
 const { Client, Buttons, List, MessageMedia, LocalAuth } = require('whatsapp-web.js');
 const OpenAI = require('openai');
 const { spawn } = require('child_process');
 const { promisify } = require('util');
-const exec = require('child_process').exec;
+const writeFileAsync = promisify(fs.writeFile);
 require('dotenv').config();
 
 // Gere o seu token 32 caracteres
