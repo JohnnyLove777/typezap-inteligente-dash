@@ -610,15 +610,27 @@ function readMapSystem(url_chat) {
 function readURL(indice) {
   const dadosAtuais = readJSONFile(DATABASE_FILE_SYSTEM);
 
+  // Verifica se DATABASE_FILE_SYSTEM é não vazio
+  if (!dadosAtuais || dadosAtuais.length === 0) {
+      console.error('O arquivo de dados está vazio.');
+      return null;
+  }
+
   // Verifica se o índice é válido
   if (indice < 0 || indice >= dadosAtuais.length) {
       console.error('Índice inválido.');
       return null;
   }
 
-  // Retorna a URL correspondente ao índice fornecido
-  return dadosAtuais[indice].url_chat;
+  // Retorna a URL e as chaves correspondentes ao índice fornecido
+  const objeto = dadosAtuais[indice];
+  return {
+      url_chat: objeto.url_chat,
+      openaikey: objeto.openaikey,
+      elevenlabskey: objeto.elevenlabskey
+  };
 }
+
 
 function deleteObjectSystem(url_chat) {
   const dadosAtuais = readJSONFile(DATABASE_FILE_SYSTEM);

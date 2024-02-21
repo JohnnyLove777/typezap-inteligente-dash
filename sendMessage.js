@@ -107,6 +107,12 @@ function addObjectSystem(url_chat, openaikey, elevenlabskey) {
 function readURL(indice) {
   const dadosAtuais = readJSONFile(DATABASE_FILE_SYSTEM);
 
+  // Verifica se DATABASE_FILE_SYSTEM é não vazio
+  if (!dadosAtuais || dadosAtuais.length === 0) {
+      console.error('O arquivo de dados está vazio.');
+      return null;
+  }
+
   // Verifica se o índice é válido
   if (indice < 0 || indice >= dadosAtuais.length) {
       console.error('Índice inválido.');
@@ -177,7 +183,7 @@ if (apiInit) {
       console.error("Chave OpenAI não encontrada no objeto.");
     }
 } else {
-    console.error("Objeto não encontrado no banco de dados.");
+    console.error("Autentique o seu TypeZapAI");
 }
 
 async function initializeClientOpenAI(openaiKey) {    
