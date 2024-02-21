@@ -35,6 +35,20 @@ app.use(express.static('public'));
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
+function readJSONFile(nomeArquivo) {
+  if (fs.existsSync(nomeArquivo)) {
+    const dados = fs.readFileSync(nomeArquivo);
+    return JSON.parse(dados);
+  } else {
+    return [];
+  }
+}
+
+function writeJSONFile(nomeArquivo, dados) {
+  const dadosJSON = JSON.stringify(dados, null, 2);
+  fs.writeFileSync(nomeArquivo, dadosJSON);
+}
+
 // DB Versão 2
 
 const DATABASE_FILE_TYPEBOT_V2 = 'typebotDBV2.json';
