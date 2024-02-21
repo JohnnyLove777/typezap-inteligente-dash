@@ -11,8 +11,6 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 //const qrcode = require('qrcode-terminal');
 const path = require('path');
-const util = require('util');
-const writeFileAsync = util.promisify(fs.writeFile);
 const { Client, Buttons, List, MessageMedia, LocalAuth, Poll } = require('whatsapp-web.js');
 
 const DATABASE_FILE = "typesessaodb.json";
@@ -67,7 +65,7 @@ async function sendMessage(phoneNumber, messageToSend) {
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
-console.log("Bem-vindo ao TypeZap AI 1.3 - A Integração mais completa Typebot + Whatsapp + AI!");
+console.log("Bem-vindo ao TypeZap 1.3 - A Integração mais completa Typebot + Whatsapp!");
 console.log(`Nome da sessão: ${sessao}`);
 
 // Listener WebSocket do frontend
@@ -208,51 +206,12 @@ wss.on('connection', function connection(ws) {
       
       // Verificar se a ação é de registrar TypeZap
       if (parsedMessage.action === 'registerTypeZap') {
-        const { url, openAIKey, elevenLabsKey } = parsedMessage.data;
+        const { url } = parsedMessage.data;
         //console.log(`Registrando TypeZap com URL: ${url}, Chave da API OpenAI: ${openAIKey}, Chave da ElevenLabs: ${elevenLabsKey}`);
         
           //if ((url.startsWith('http://') || url.startsWith('https://')) && openAIKey.startsWith('sk-') && elevenLabsKey.length === 32) {
           // Se todas as verificações passarem, prossegue com o registro
-          addObjectSystem(url, openAIKey, elevenLabsKey);
-          let retries = 0;
-          const maxRetries = 15; // Máximo de tentativas
-          let delay = init_delay; // Tempo inicial de espera em milissegundos
-          const sendRequest = async () => {              
-              const response = await fetch(`http://localhost:${portSend}/initOpenai`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                      key: openAIKey,
-                      token: token
-                  })
-              });
-      
-              if (!response.ok) {
-                  throw new Error(`Request failed with status ${response.status}`);
-              }
-      
-              return await response.json();
-          };
-      
-          const sendMessageWithRetry = async () => {
-            while (retries < maxRetries) {
-                try {
-                    await sendRequest();
-                    //console.log('Mensagem enviada com sucesso.');
-                    return;
-                } catch (error) {
-                    retries++;
-                    console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    delay *= 2; // Dobrar o tempo de espera para a próxima tentativa
-                }
-            }
-            console.error('Erro: Número máximo de tentativas de envio atingido.');
-            process.exit(1); // Sai com erro, PM2 tentará reiniciar o serviço
-          };
-        
-          sendMessageWithRetry();
-
+          addObjectSystem(url);
           ws.send('TypeZap registrado com sucesso! Pow pow tei tei, pra cima deles!!');
           //}
              
@@ -529,6 +488,63 @@ wss.on('connection', function connection(ws) {
         });
       }
 
+      /* // Protótipo para integrar qrcode no dashboard
+      else if (parsedMessage.action === 'generateListenerQRCode' || parsedMessage.action === 'generateSenderQRCode') {
+        const sessionId = parsedMessage.action === 'generateListenerQRCode' ? 'typeListener' : 'sendMessage';
+    
+        if (clients[sessionId]) {
+            console.log(`Sessão ${sessionId} já está ativa.`);
+            ws.send(JSON.stringify({ action: 'statusUpdate', sessionId: sessionId, statusMessage: `Sessão ${sessionId} já está ativa.` }));
+            return;
+        }
+    
+        const clientConfig = {
+            authStrategy: new LocalAuth({ clientId: sessionId }),
+            puppeteer: {
+                executablePath: 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+            }
+        };
+    
+        const client = new Client(clientConfig);
+    
+        client.on('qr', (qr) => {
+            console.log(`[${sessionId}] QR Code recebido.`);
+            ws.send(JSON.stringify({ action: 'qr', sessionId: sessionId, qrCode: `data:image/png;base64,${qr}` }));
+        });
+    
+        client.on('ready', () => {
+            console.log(`[${sessionId}] Cliente está pronto.`);
+            ws.send(JSON.stringify({ action: 'statusUpdate', sessionId: sessionId, statusMessage: `Instância ${sessionId} conectada` }));
+        });
+    
+        client.on('disconnected', (reason) => {
+            console.log(`[${sessionId}] Cliente desconectado: ${reason}`);
+            delete clients[sessionId];
+            ws.send(JSON.stringify({ action: 'statusUpdate', sessionId: sessionId, statusMessage: `Aguardando conexão da instância ${sessionId}` }));
+        });
+    
+        client.initialize();
+        clients[sessionId] = client;
+      }
+      else if (parsedMessage.action === 'logoutInstances') {
+        ['typeListener', 'sendMessage'].forEach(sessionId => {
+            if (clients[sessionId]) {
+                clients[sessionId].destroy();
+                delete clients[sessionId];
+                console.log(`[${sessionId}] Sessão desconectada.`);
+                ws.send(JSON.stringify({ action: 'logoutSuccess', sessionId: sessionId, message: `Sessão ${sessionId} desconectada com sucesso.` }));
+            } else {
+                console.log(`[${sessionId}] Sessão não encontrada ou já desconectada.`);
+                ws.send(JSON.stringify({ action: 'error', sessionId: sessionId, message: `Sessão ${sessionId} não encontrada ou já desconectada.` }));
+            }
+        });
+      }
+      */
+          
+    
+
+      //O resto aqui
+
     } catch (e) {
       console.error('Erro ao processar a mensagem:', e);
       ws.send('Erro ao processar a mensagem recebida');
@@ -554,7 +570,7 @@ function createFolderIfNotExists(folderPath) {
 }
 
 // Caminhos das pastas
-const leadsPath = path.join(__dirname, 'leadslista');
+const leadsPath = path.join(__dirname, 'leadslista')
 
 // Criar as pastas
 createFolderIfNotExists(leadsPath);
@@ -612,8 +628,8 @@ function readURL(indice) {
 
   // Verifica se DATABASE_FILE_SYSTEM é não vazio
   if (!dadosAtuais || dadosAtuais.length === 0) {
-      console.error('O arquivo de dados está vazio.');
-      return null;
+    console.error('O arquivo de dados está vazio.');
+    return null;
   }
 
   // Verifica se o índice é válido
@@ -622,15 +638,9 @@ function readURL(indice) {
       return null;
   }
 
-  // Retorna a URL e as chaves correspondentes ao índice fornecido
-  const objeto = dadosAtuais[indice];
-  return {
-      url_chat: objeto.url_chat,
-      openaikey: objeto.openaikey,
-      elevenlabskey: objeto.elevenlabskey
-  };
+  // Retorna a URL correspondente ao índice fornecido
+  return dadosAtuais[indice].url_chat;
 }
-
 
 function deleteObjectSystem(url_chat) {
   const dadosAtuais = readJSONFile(DATABASE_FILE_SYSTEM);
@@ -663,7 +673,7 @@ function existsTheDBSystem() {
 
 //Gestão de dados do controle das sessões
 
-function addObject(numeroId, sessionid, numero, id, interact, fluxo, optout, flow, nextAudio, nextImage, prompt, maxObjects) {
+function addObject(numeroId, sessionid, numero, id, interact, fluxo, optout, flow, maxObjects) {
   const dadosAtuais = readJSONFile(DATABASE_FILE);
 
   // Verificar a unicidade do numeroId
@@ -672,7 +682,7 @@ function addObject(numeroId, sessionid, numero, id, interact, fluxo, optout, flo
     throw new Error('O numeroId já existe no banco de dados.');
   }
 
-  const objeto = { numeroId, sessionid, numero, id, interact, fluxo, optout, flow, nextAudio, nextImage, prompt};
+  const objeto = { numeroId, sessionid, numero, id, interact, fluxo, optout, flow};
 
   if (dadosAtuais.length >= maxObjects) {
     // Excluir o objeto mais antigo
@@ -698,48 +708,6 @@ function deleteObject(numeroId) {
 function existsDB(numeroId) {
   const dadosAtuais = readJSONFile(DATABASE_FILE);
   return dadosAtuais.some(obj => obj.numeroId === numeroId);
-}
-
-function updatePrompt(numeroId, prompt) {
-  const dadosAtuais = readJSONFile(DATABASE_FILE);
-  const objeto = dadosAtuais.find(obj => obj.numeroId === numeroId);
-  if (objeto) {
-    objeto.prompt = prompt;
-    writeJSONFile(DATABASE_FILE, dadosAtuais);
-  }
-}  
-
-function readPrompt(numeroId) {
-  const objeto = readMap(numeroId);
-  return objeto ? objeto.prompt : undefined;
-}
-
-function updateNextAudio(numeroId, nextAudio) {
-  const dadosAtuais = readJSONFile(DATABASE_FILE);
-  const objeto = dadosAtuais.find(obj => obj.numeroId === numeroId);
-  if (objeto) {
-    objeto.nextAudio = nextAudio;
-    writeJSONFile(DATABASE_FILE, dadosAtuais);
-  }
-}  
-
-function readNextAudio(numeroId) {
-  const objeto = readMap(numeroId);
-  return objeto ? objeto.nextAudio : undefined;
-}
-
-function updateNextImage(numeroId, nextImage) {
-  const dadosAtuais = readJSONFile(DATABASE_FILE);
-  const objeto = dadosAtuais.find(obj => obj.numeroId === numeroId);
-  if (objeto) {
-    objeto.nextImage = nextImage;
-    writeJSONFile(DATABASE_FILE, dadosAtuais);
-  }
-}  
-
-function readNextImage(numeroId) {
-  const objeto = readMap(numeroId);
-  return objeto ? objeto.nextImage : undefined;
 }
 
 function updateSessionId(numeroId, sessionid) {
@@ -1104,64 +1072,7 @@ function readJSONFileTypebotV2(filename) {
 function writeJSONFileTypebotV2(filename, data) {
     fs.writeFileSync(filename, JSON.stringify(data, null, 2));
 }
-
-// ProcessMessage
-
-async function processMessageIA(msg) {
-  const token = 'seu_token_aqui'; // Substitua pelo token real de autenticação
-  const mediaAIEndpoint = 'http://localhost:3000/mediaAI'; // Substitua pela URL real do seu endpoint
-
-  if (msg.hasMedia) {
-      const attachmentData = await msg.downloadMedia();
-      let filePath;
-      let mediaType;
-
-      if (readNextAudio(msg.from) && attachmentData.mimetype === 'audio/ogg; codecs=opus') {
-          filePath = `./audiobruto/${msg.from.split('@c.us')[0]}.ogg`;
-          mediaType = 'audio';
-      } else if (readNextImage(msg.from) && attachmentData.mimetype.startsWith('image/')) {
-          filePath = `./imagemliquida/${msg.from.split('@c.us')[0]}.jpg`;
-          mediaType = 'image';
-      } else {
-          return "Tipo de mídia não suportado ou não esperado."; // Retorna uma mensagem adequada para tipos de mídia não suportados
-      }
-
-      // Escreve o arquivo de mídia recebido
-      await writeFileAsync(filePath, Buffer.from(attachmentData.data, 'base64'));
-
-      // Espera até que o arquivo exista antes de prosseguir
-      while (!fs.existsSync(filePath)) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-
-      // Envia a requisição ao endpoint mediaAI e processa a resposta
-      try {
-          const response = await fetch(mediaAIEndpoint, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                  path: filePath,
-                  token: token
-              })
-          });
-
-          if (!response.ok) {
-              throw new Error(`Request failed with status ${response.status}`);
-          }
-
-          const responseData = await response.json();
-          fs.unlinkSync(filePath); // Limpa o arquivo temporário após o processamento
-          return responseData.mensagem; // Retorna a mensagem processada do endpoint
-      } catch (error) {
-          console.error('Erro ao enviar para mediaAI:', error);
-          return "Erro ao processar a mídia."; // Retorna uma mensagem de erro em caso de falha
-      }
-  } else {
-      return msg.body; // Se não houver mídia, simplesmente retorna o corpo da mensagem
-  }
-}
-
-// Fim processmessage
+// teste reinit
 
 async function createSessionJohnnyV2(data, datafrom, url_registro, fluxo) {
   
@@ -1186,10 +1097,6 @@ async function createSessionJohnnyV2(data, datafrom, url_registro, fluxo) {
     },
     data: reqData
   };
-
-  if (!existsDB(datafrom)) {
-    addObject(datafrom, response.data.sessionId, datafrom.replace(/\D/g, ''), JSON.stringify(data.id.id), 'typing', fluxo, false, "active", false, false, null, db_length);
-  }
 
   try {
     const response = await axios.request(config);
@@ -1265,150 +1172,58 @@ async function createSessionJohnnyV2(data, datafrom, url_registro, fluxo) {
               await sendMediaEndPoint(datafrom, link); // Envia a requisição com retry
           }
         }
-        if (formattedText.startsWith('!entenderaudio')) {          
+        /*if (formattedText.startsWith('!myself')) {
           if (existsDB(datafrom)) {
-            updateNextAudio(datafrom, true);
-          }
-        }
-        if (formattedText.startsWith('!entenderimagem')) {          
-          if (existsDB(datafrom)) {
-            updateNextImage(datafrom, true);
-            updatePrompt(datafrom, formattedText.split(' ').slice(1).join(' '));
-          }
-        }
-        if (formattedText.startsWith('!audioopenai')) {          
-          if (existsDB(datafrom)) {
-            let retries = 0;
-            const maxRetries = 15; // Máximo de tentativas
-            let delay = init_delay; // Tempo inicial de espera em milissegundos
-      
-            const sendRequest = async () => {
-              const response = await fetch(`http://localhost:${portSend}/audioOpenAI`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                      destinatario: datafrom,
-                      mensagem: formattedText.split(' ')[1],
-                      token: token
-                  })
-              });
-          
-              if (!response.ok) {
-                  throw new Error(`Request failed with status ${response.status}`);
-              }
-          
-              return await response.json();
-          };
-          
-          const sendMessageWithRetry = async () => {
-              while (retries < maxRetries) {
-                  try {
-                      const response = await sendRequest();
-                      console.log('Áudio enviado com sucesso.', response);
-                      return; // Sai do loop se a requisição for bem-sucedida
-                  } catch (error) {
-                      retries++;
-                      console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
-                      await new Promise(resolve => setTimeout(resolve, delay));
-                      delay *= 2; // Dobrar o tempo de espera para a próxima tentativa
-                  }
-              }
-              console.error('Erro: Número máximo de tentativas de envio atingido.');
-              // Considerar o que fazer após o máximo de tentativas ser atingido, talvez notificar alguém ou registrar em algum lugar
-          };
-          
-          sendMessageWithRetry();
-          }
-        }
-        if (formattedText.startsWith('!audioeleven')) {
-          if (existsDB(datafrom)) {
-            let retries = 0;
-            const maxRetries = 15; // Máximo de tentativas
-            let delay = init_delay; // Tempo inicial de espera em milissegundos
+              console.log(JSON.stringify(formattedText));              
+              //const mensagem = formattedText.split(' ')[1];
 
-            const sendRequest = async () => {
-              const response = await fetch(`http://localhost:${portSend}/audioElevenLabs`, {
+              let retries = 0;
+              const maxRetries = 15; // Máximo de tentativas
+              let delay = init_delay; // Tempo inicial de espera em milissegundos
+          
+      
+              const sendRequest = async () => {              
+              const response = await fetch(`http://localhost:${portSend}/sendMessage`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
-                      destinatario: datafrom,
-                      mensagem: formattedText.split(' ')[1],
+                      destinatario: data.to,
+                      mensagem: formattedText,
+                      tipo: "text",
+                      msg: data,
                       token: token
                   })
               });
-          
+      
               if (!response.ok) {
                   throw new Error(`Request failed with status ${response.status}`);
               }
-          
+      
               return await response.json();
           };
-          
+      
           const sendMessageWithRetry = async () => {
-              while (retries < maxRetries) {
-                  try {
-                      const response = await sendRequest();
-                      console.log('Áudio enviado com sucesso.', response);
-                      return;
-                  } catch (error) {
-                      retries++;
-                      console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
-                      await new Promise(resolve => setTimeout(resolve, delay));
-                      delay *= 2;
-                  }
-              }
-              console.error('Erro: Número máximo de tentativas de envio atingido.');
-          };
-          
-          sendMessageWithRetry();      
+            while (retries < maxRetries) {
+                try {
+                    await sendRequest();
+                    //console.log('Mensagem enviada com sucesso.');
+                    return;
+                } catch (error) {
+                    retries++;
+                    console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2; // Dobrar o tempo de espera para a próxima tentativa
+                }
+            }
+            console.error('Erro: Número máximo de tentativas de envio atingido.');
+            process.exit(1); // Sai com erro, PM2 tentará reiniciar o serviço
+        };
+        
+           sendMessageWithRetry();
               
           }
-        }
-        if (formattedText.startsWith('!imagemopenai')) {
-          if (existsDB(datafrom)) {
-            let retries = 0;
-            const maxRetries = 15; // Máximo de tentativas
-            let delay = init_delay; // Tempo inicial de espera em milissegundos
-      
-            const sendRequest = async () => {
-              const response = await fetch(`http://localhost:${portSend}/imagemOpenAI`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                      destinatario: datafrom,
-                      mensagem: formattedText.split(' ')[1],
-                      token: token
-                  })
-              });
-          
-              if (!response.ok) {
-                  throw new Error(`Request failed with status ${response.status}`);
-              }
-          
-              return await response.json();
-          };
-          
-          const sendMessageWithRetry = async () => {
-              while (retries < maxRetries) {
-                  try {
-                      const response = await sendRequest();
-                      console.log('Áudio enviado com sucesso.', response);
-                      return; // Sai do loop se a requisição for bem-sucedida
-                  } catch (error) {
-                      retries++;
-                      console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
-                      await new Promise(resolve => setTimeout(resolve, delay));
-                      delay *= 2; // Dobrar o tempo de espera para a próxima tentativa
-                  }
-              }
-              console.error('Erro: Número máximo de tentativas de envio atingido.');
-              // Considerar o que fazer após o máximo de tentativas ser atingido, talvez notificar alguém ou registrar em algum lugar
-          };
-          
-          sendMessageWithRetry();
-          }
-        }
-        if (!(formattedText.startsWith('!wait')) && !(formattedText.startsWith('!fim')) && !(formattedText.startsWith('!optout')) && !(formattedText.startsWith('!reiniciar')) && !(formattedText.startsWith('!media')) && !(formattedText.startsWith('!entenderaudio')) && !(formattedText.startsWith('!entenderimagem')) && !(formattedText.startsWith('!audioopenai')) && !(formattedText.startsWith('!audioeleven'))  && !(formattedText.startsWith('!imagemopenai'))) {
+        }*/
+        if (!(formattedText.startsWith('!wait')) && !(formattedText.startsWith('!fim')) && !(formattedText.startsWith('!optout')) && !(formattedText.startsWith('!reiniciar')) && !(formattedText.startsWith('!media')) && !(formattedText.startsWith('!myself'))) {
           let retries = 0;
           const maxRetries = 15; // Máximo de tentativas
           let delay = init_delay; // Tempo inicial de espera em milissegundos
@@ -1539,7 +1354,7 @@ async function createSessionJohnnyV2(data, datafrom, url_registro, fluxo) {
   }
     if (!existsDB(datafrom)) {
       addObject(datafrom, response.data.sessionId, datafrom.replace(/\D/g, ''), JSON.stringify(data.id.id), 'done', fluxo, false, "active", db_length);
-    }    
+    }
     if(existsDB(datafrom)){
       updateSessionId(datafrom, response.data.sessionId);
       updateId(datafrom, JSON.stringify(data.id.id));
@@ -2058,10 +1873,6 @@ async function createSessionJohnny(data, url_registro, fluxo) {
     data: reqData
   };
 
-  if (!existsDB(data.from)) {
-    addObject(data.from, response.data.sessionId, data.from.replace(/\D/g, ''), JSON.stringify(data.id.id), 'typing', fluxo, false, "active", false, false, null, db_length);
-  }
-
   try {
     const response = await axios.request(config);
 
@@ -2135,150 +1946,58 @@ async function createSessionJohnny(data, url_registro, fluxo) {
               await sendMediaEndPoint(data.from, link); // Envia a requisição com retry
           }
         }
-        if (formattedText.startsWith('!entenderaudio')) {          
-          if (existsDB(data.from)) {
-            updateNextAudio(data.from, true);
-          }
-        }
-        if (formattedText.startsWith('!entenderimagem')) {          
-          if (existsDB(data.from)) {
-            updateNextImage(data.from, true);
-            updatePrompt(data.from, formattedText.split(' ').slice(1).join(' '));
-          }
-        }
-        if (formattedText.startsWith('!audioopenai')) {          
-          if (existsDB(data.from)) {
-            let retries = 0;
-            const maxRetries = 15; // Máximo de tentativas
-            let delay = init_delay; // Tempo inicial de espera em milissegundos
-      
-            const sendRequest = async () => {
-              const response = await fetch(`http://localhost:${portSend}/audioOpenAI`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                      destinatario: data.from,
-                      mensagem: formattedText.split(' ')[1],
-                      token: token
-                  })
-              });
-          
-              if (!response.ok) {
-                  throw new Error(`Request failed with status ${response.status}`);
-              }
-          
-              return await response.json();
-          };
-          
-          const sendMessageWithRetry = async () => {
-              while (retries < maxRetries) {
-                  try {
-                      const response = await sendRequest();
-                      console.log('Áudio enviado com sucesso.', response);
-                      return; // Sai do loop se a requisição for bem-sucedida
-                  } catch (error) {
-                      retries++;
-                      console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
-                      await new Promise(resolve => setTimeout(resolve, delay));
-                      delay *= 2; // Dobrar o tempo de espera para a próxima tentativa
-                  }
-              }
-              console.error('Erro: Número máximo de tentativas de envio atingido.');
-              // Considerar o que fazer após o máximo de tentativas ser atingido, talvez notificar alguém ou registrar em algum lugar
-          };
-          
-          sendMessageWithRetry();
-          }
-        }
-        if (formattedText.startsWith('!audioeleven')) {
-          if (existsDB(data.from)) {
-            let retries = 0;
-            const maxRetries = 15; // Máximo de tentativas
-            let delay = init_delay; // Tempo inicial de espera em milissegundos
+        /*if (formattedText.startsWith('!myself')) {
+          if (existsDB(data.from)) {   
+              console.log(JSON.stringify(formattedText));            
+              const mensagem = formattedText.split(' ')[1];
 
-            const sendRequest = async () => {
-              const response = await fetch(`http://localhost:${portSend}/audioElevenLabs`, {
+              let retries = 0;
+              const maxRetries = 15; // Máximo de tentativas
+              let delay = init_delay; // Tempo inicial de espera em milissegundos
+          
+      
+              const sendRequest = async () => {              
+              const response = await fetch(`http://localhost:${portSend}/sendMessage`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
-                      destinatario: data.from,
-                      mensagem: formattedText.split(' ')[1],
+                      destinatario: data.to,
+                      mensagem: formattedText,
+                      tipo: "text",
+                      msg: data,
                       token: token
                   })
               });
-          
+      
               if (!response.ok) {
                   throw new Error(`Request failed with status ${response.status}`);
               }
-          
+      
               return await response.json();
           };
-          
+      
           const sendMessageWithRetry = async () => {
-              while (retries < maxRetries) {
-                  try {
-                      const response = await sendRequest();
-                      console.log('Áudio enviado com sucesso.', response);
-                      return;
-                  } catch (error) {
-                      retries++;
-                      console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
-                      await new Promise(resolve => setTimeout(resolve, delay));
-                      delay *= 2;
-                  }
-              }
-              console.error('Erro: Número máximo de tentativas de envio atingido.');
-          };
-          
-          sendMessageWithRetry();      
+            while (retries < maxRetries) {
+                try {
+                    await sendRequest();
+                    //console.log('Mensagem enviada com sucesso.');
+                    return;
+                } catch (error) {
+                    retries++;
+                    console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2; // Dobrar o tempo de espera para a próxima tentativa
+                }
+            }
+            console.error('Erro: Número máximo de tentativas de envio atingido.');
+            process.exit(1); // Sai com erro, PM2 tentará reiniciar o serviço
+        };
+        
+           sendMessageWithRetry();
               
           }
-        }
-        if (formattedText.startsWith('!imagemopenai')) {
-          if (existsDB(data.from)) {
-            let retries = 0;
-            const maxRetries = 15; // Máximo de tentativas
-            let delay = init_delay; // Tempo inicial de espera em milissegundos
-      
-            const sendRequest = async () => {
-              const response = await fetch(`http://localhost:${portSend}/imagemOpenAI`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                      destinatario: data.from,
-                      mensagem: formattedText.split(' ')[1],
-                      token: token
-                  })
-              });
-          
-              if (!response.ok) {
-                  throw new Error(`Request failed with status ${response.status}`);
-              }
-          
-              return await response.json();
-          };
-          
-          const sendMessageWithRetry = async () => {
-              while (retries < maxRetries) {
-                  try {
-                      const response = await sendRequest();
-                      console.log('Áudio enviado com sucesso.', response);
-                      return; // Sai do loop se a requisição for bem-sucedida
-                  } catch (error) {
-                      retries++;
-                      console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
-                      await new Promise(resolve => setTimeout(resolve, delay));
-                      delay *= 2; // Dobrar o tempo de espera para a próxima tentativa
-                  }
-              }
-              console.error('Erro: Número máximo de tentativas de envio atingido.');
-              // Considerar o que fazer após o máximo de tentativas ser atingido, talvez notificar alguém ou registrar em algum lugar
-          };
-          
-          sendMessageWithRetry();
-          }
-        }
-        if (!(formattedText.startsWith('!wait')) && !(formattedText.startsWith('!fim')) && !(formattedText.startsWith('!optout')) && !(formattedText.startsWith('!reiniciar')) && !(formattedText.startsWith('!media')) && !(formattedText.startsWith('!entenderaudio')) && !(formattedText.startsWith('!entenderimagem')) && !(formattedText.startsWith('!audioopenai')) && !(formattedText.startsWith('!audioeleven'))  && !(formattedText.startsWith('!imagemopenai'))) {
+        }*/
+        if (!(formattedText.startsWith('!wait')) && !(formattedText.startsWith('!fim')) && !(formattedText.startsWith('!optout')) && !(formattedText.startsWith('!reiniciar')) && !(formattedText.startsWith('!media')) && !(formattedText.startsWith('!myself'))) {
           let retries = 0;
           const maxRetries = 15; // Máximo de tentativas
           let delay = init_delay; // Tempo inicial de espera em milissegundos
@@ -2350,9 +2069,9 @@ async function createSessionJohnny(data, url_registro, fluxo) {
           // formattedText = formattedText.replace(/\n$/, '');
           await sendMessage(data.from, new Poll('*Escolha uma resposta:*', arrayoptions));
         }
-    }    
+    }
     if (!existsDB(data.from)) {
-      addObject(data.from, response.data.sessionId, data.from.replace(/\D/g, ''), JSON.stringify(data.id.id), 'done', fluxo, false, "active", false, false, null, db_length);
+      addObject(data.from, response.data.sessionId, data.from.replace(/\D/g, ''), JSON.stringify(data.id.id), 'done', fluxo, false, "active", db_length);
     }
     
   } catch (error) {
@@ -2456,10 +2175,7 @@ client.on('message', async msg => {
       updateId(msg.from, JSON.stringify(msg.id.id));  
       const chat = await msg.getChat();
         const sessionId = await readSessionId(msg.from);
-        const content = await processMessageIA(msg);
-        updateNextAudio(msg.from, false);
-        updateNextImage(msg.from, false);
-        //const content = msg.body;
+        const content = msg.body;
         //const chaturl = `${url_chat}${sessionId}/continueChat`;
         const chaturl = `${readURL(0)}${sessionId}/continueChat`;       
         
@@ -2551,150 +2267,58 @@ client.on('message', async msg => {
                     await sendMediaEndPoint(msg.from, link); // Envia a requisição com retry
                 }
               }
-              if (formattedText.startsWith('!entenderaudio')) {          
-                if (existsDB(msg.from)) {
-                  updateNextAudio(msg.from, true);
-                }
-              }
-              if (formattedText.startsWith('!entenderimagem')) {          
-                if (existsDB(msg.from)) {
-                  updateNextImage(msg.from, true);
-                  updatePrompt(msg.from, formattedText.split(' ').slice(1).join(' '));
-                }
-              }
-              if (formattedText.startsWith('!audioopenai')) {          
-                if (existsDB(msg.from)) {
-                  let retries = 0;
-                  const maxRetries = 15; // Máximo de tentativas
-                  let delay = init_delay; // Tempo inicial de espera em milissegundos
-            
-                  const sendRequest = async () => {
-                    const response = await fetch(`http://localhost:${portSend}/audioOpenAI`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            destinatario: msg.from,
-                            mensagem: formattedText.split(' ')[1],
-                            token: token
-                        })
-                    });
-                
-                    if (!response.ok) {
-                        throw new Error(`Request failed with status ${response.status}`);
-                    }
-                
-                    return await response.json();
-                };
-                
-                const sendMessageWithRetry = async () => {
-                    while (retries < maxRetries) {
-                        try {
-                            const response = await sendRequest();
-                            console.log('Áudio enviado com sucesso.', response);
-                            return; // Sai do loop se a requisição for bem-sucedida
-                        } catch (error) {
-                            retries++;
-                            console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                            delay *= 2; // Dobrar o tempo de espera para a próxima tentativa
-                        }
-                    }
-                    console.error('Erro: Número máximo de tentativas de envio atingido.');
-                    // Considerar o que fazer após o máximo de tentativas ser atingido, talvez notificar alguém ou registrar em algum lugar
-                };
-                
-                sendMessageWithRetry();
-                }
-              }
-              if (formattedText.startsWith('!audioeleven')) {
-                if (existsDB(msg.from)) {
-                  let retries = 0;
-                  const maxRetries = 15; // Máximo de tentativas
-                  let delay = init_delay; // Tempo inicial de espera em milissegundos
+              /*if (formattedText.startsWith('!myself')) {
+                if (existsDB(msg.from)) {         
+                  console.log(JSON.stringify(formattedText));      
+                    const mensagem = formattedText.split(' ')[1];
       
-                  const sendRequest = async () => {
-                    const response = await fetch(`http://localhost:${portSend}/audioElevenLabs`, {
+                    let retries = 0;
+                    const maxRetries = 15; // Máximo de tentativas
+                    let delay = init_delay; // Tempo inicial de espera em milissegundos
+                
+            
+                    const sendRequest = async () => {              
+                    const response = await fetch(`http://localhost:${portSend}/sendMessage`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            destinatario: msg.from,
-                            mensagem: formattedText.split(' ')[1],
+                            destinatario: msg.to,
+                            mensagem: formattedText,
+                            tipo: "text",
+                            msg: data,
                             token: token
                         })
                     });
-                
+            
                     if (!response.ok) {
                         throw new Error(`Request failed with status ${response.status}`);
                     }
-                
+            
                     return await response.json();
                 };
-                
+            
                 const sendMessageWithRetry = async () => {
-                    while (retries < maxRetries) {
-                        try {
-                            const response = await sendRequest();
-                            console.log('Áudio enviado com sucesso.', response);
-                            return;
-                        } catch (error) {
-                            retries++;
-                            console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                            delay *= 2;
-                        }
-                    }
-                    console.error('Erro: Número máximo de tentativas de envio atingido.');
-                };
-                
-                sendMessageWithRetry();      
+                  while (retries < maxRetries) {
+                      try {
+                          await sendRequest();
+                          //console.log('Mensagem enviada com sucesso.');
+                          return;
+                      } catch (error) {
+                          retries++;
+                          console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
+                          await new Promise(resolve => setTimeout(resolve, delay));
+                          delay *= 2; // Dobrar o tempo de espera para a próxima tentativa
+                      }
+                  }
+                  console.error('Erro: Número máximo de tentativas de envio atingido.');
+                  process.exit(1); // Sai com erro, PM2 tentará reiniciar o serviço
+              };
+              
+                 sendMessageWithRetry();
                     
                 }
-              }
-              if (formattedText.startsWith('!imagemopenai')) {
-                if (existsDB(msg.from)) {
-                  let retries = 0;
-                  const maxRetries = 15; // Máximo de tentativas
-                  let delay = init_delay; // Tempo inicial de espera em milissegundos
-            
-                  const sendRequest = async () => {
-                    const response = await fetch(`http://localhost:${portSend}/imagemOpenAI`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            destinatario: msg.from,
-                            mensagem: formattedText.split(' ')[1],
-                            token: token
-                        })
-                    });
-                
-                    if (!response.ok) {
-                        throw new Error(`Request failed with status ${response.status}`);
-                    }
-                
-                    return await response.json();
-                };
-                
-                const sendMessageWithRetry = async () => {
-                    while (retries < maxRetries) {
-                        try {
-                            const response = await sendRequest();
-                            console.log('Áudio enviado com sucesso.', response);
-                            return; // Sai do loop se a requisição for bem-sucedida
-                        } catch (error) {
-                            retries++;
-                            console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                            delay *= 2; // Dobrar o tempo de espera para a próxima tentativa
-                        }
-                    }
-                    console.error('Erro: Número máximo de tentativas de envio atingido.');
-                    // Considerar o que fazer após o máximo de tentativas ser atingido, talvez notificar alguém ou registrar em algum lugar
-                };
-                
-                sendMessageWithRetry();
-                }
-              }
-              if (!(formattedText.startsWith('!wait')) && !(formattedText.startsWith('!fim')) && !(formattedText.startsWith('!optout')) && !(formattedText.startsWith('!reiniciar')) && !(formattedText.startsWith('!media')) && !(formattedText.startsWith('!entenderaudio')) && !(formattedText.startsWith('!entenderimagem')) && !(formattedText.startsWith('!audioopenai')) && !(formattedText.startsWith('!audioeleven'))  && !(formattedText.startsWith('!imagemopenai'))) {
+              }*/
+              if (!(formattedText.startsWith('!wait')) && !(formattedText.startsWith('!fim')) && !(formattedText.startsWith('!optout')) && !(formattedText.startsWith('!reiniciar')) && !(formattedText.startsWith('!media')) && !(formattedText.startsWith('!myself'))) {
                 let retries = 0;
                 const maxRetries = 15; // Máximo de tentativas
                 let delay = init_delay; // Tempo inicial de espera em milissegundos                           
@@ -3587,150 +3211,7 @@ client.on('vote_update', async (vote) => {
             await sendMediaEndPoint(vote.voter, link); // Envia a requisição com retry
         }
       }
-      if (formattedText.startsWith('!entenderaudio')) {          
-        if (existsDB(vote.voter)) {
-          updateNextAudio(vote.voter, true);
-        }
-      }
-      if (formattedText.startsWith('!entenderimagem')) {          
-        if (existsDB(vote.voter)) {
-          updateNextImage(vote.voter, true);
-          updatePrompt(vote.voter, formattedText.split(' ').slice(1).join(' '));
-        }
-      }
-      if (formattedText.startsWith('!audioopenai')) {          
-        if (existsDB(vote.voter)) {
-          let retries = 0;
-          const maxRetries = 15; // Máximo de tentativas
-          let delay = init_delay; // Tempo inicial de espera em milissegundos
-    
-          const sendRequest = async () => {
-            const response = await fetch(`http://localhost:${portSend}/audioOpenAI`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    destinatario: vote.voter,
-                    mensagem: formattedText.split(' ')[1],
-                    token: token
-                })
-            });
-        
-            if (!response.ok) {
-                throw new Error(`Request failed with status ${response.status}`);
-            }
-        
-            return await response.json();
-        };
-        
-        const sendMessageWithRetry = async () => {
-            while (retries < maxRetries) {
-                try {
-                    const response = await sendRequest();
-                    console.log('Áudio enviado com sucesso.', response);
-                    return; // Sai do loop se a requisição for bem-sucedida
-                } catch (error) {
-                    retries++;
-                    console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    delay *= 2; // Dobrar o tempo de espera para a próxima tentativa
-                }
-            }
-            console.error('Erro: Número máximo de tentativas de envio atingido.');
-            // Considerar o que fazer após o máximo de tentativas ser atingido, talvez notificar alguém ou registrar em algum lugar
-        };
-        
-        sendMessageWithRetry();
-        }
-      }
-      if (formattedText.startsWith('!audioeleven')) {
-        if (existsDB(vote.voter)) {
-          let retries = 0;
-          const maxRetries = 15; // Máximo de tentativas
-          let delay = init_delay; // Tempo inicial de espera em milissegundos
-
-          const sendRequest = async () => {
-            const response = await fetch(`http://localhost:${portSend}/audioElevenLabs`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    destinatario: vote.voter,
-                    mensagem: formattedText.split(' ')[1],
-                    token: token
-                })
-            });
-        
-            if (!response.ok) {
-                throw new Error(`Request failed with status ${response.status}`);
-            }
-        
-            return await response.json();
-        };
-        
-        const sendMessageWithRetry = async () => {
-            while (retries < maxRetries) {
-                try {
-                    const response = await sendRequest();
-                    console.log('Áudio enviado com sucesso.', response);
-                    return;
-                } catch (error) {
-                    retries++;
-                    console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    delay *= 2;
-                }
-            }
-            console.error('Erro: Número máximo de tentativas de envio atingido.');
-        };
-        
-        sendMessageWithRetry();      
-            
-        }
-      }
-      if (formattedText.startsWith('!imagemopenai')) {
-        if (existsDB(vote.voter)) {
-          let retries = 0;
-          const maxRetries = 15; // Máximo de tentativas
-          let delay = init_delay; // Tempo inicial de espera em milissegundos
-    
-          const sendRequest = async () => {
-            const response = await fetch(`http://localhost:${portSend}/imagemOpenAI`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    destinatario: vote.voter,
-                    mensagem: formattedText.split(' ')[1],
-                    token: token
-                })
-            });
-        
-            if (!response.ok) {
-                throw new Error(`Request failed with status ${response.status}`);
-            }
-        
-            return await response.json();
-        };
-        
-        const sendMessageWithRetry = async () => {
-            while (retries < maxRetries) {
-                try {
-                    const response = await sendRequest();
-                    console.log('Áudio enviado com sucesso.', response);
-                    return; // Sai do loop se a requisição for bem-sucedida
-                } catch (error) {
-                    retries++;
-                    console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    delay *= 2; // Dobrar o tempo de espera para a próxima tentativa
-                }
-            }
-            console.error('Erro: Número máximo de tentativas de envio atingido.');
-            // Considerar o que fazer após o máximo de tentativas ser atingido, talvez notificar alguém ou registrar em algum lugar
-        };
-        
-        sendMessageWithRetry();
-        }
-      }
-      if (!(formattedText.startsWith('!wait')) && !(formattedText.startsWith('!fim')) && !(formattedText.startsWith('!optout')) && !(formattedText.startsWith('!reiniciar')) && !(formattedText.startsWith('!media')) && !(formattedText.startsWith('!entenderaudio')) && !(formattedText.startsWith('!entenderimagem')) && !(formattedText.startsWith('!audioopenai')) && !(formattedText.startsWith('!audioeleven'))  && !(formattedText.startsWith('!imagemopenai'))) {
+      if (!(formattedText.startsWith('!wait')) && !(formattedText.startsWith('!fim')) && !(formattedText.startsWith('!optout')) && !(formattedText.startsWith('!reiniciar')) && !(formattedText.startsWith('!media'))) {
         let retries = 0;
         const maxRetries = 15; // Máximo de tentativas
         let delay = init_delay; // Tempo inicial de espera em milissegundos                           
