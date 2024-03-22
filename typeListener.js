@@ -1705,7 +1705,8 @@ async function createSessionJohnnyV2(data, datafrom, url_registro, fluxo) {
                               destinatario: datafrom,
                               media: media,
                               tipo: "audio",                    
-                              msg: data
+                              msg: data,
+                              token: token
                           })
                       });
       
@@ -1768,7 +1769,8 @@ async function createSessionJohnnyV2(data, datafrom, url_registro, fluxo) {
                               destinatario: datafrom,
                               media: media,
                               tipo: "audio",                    
-                              msg: ""
+                              msg: "",
+                              token: token
                           })
                       });
       
@@ -1833,7 +1835,8 @@ async function createSessionJohnnyV2(data, datafrom, url_registro, fluxo) {
                               destinatario: datafrom,
                               media: media,
                               tipo: "image",
-                              msg: "" // Mensagem opcional
+                              msg: "",
+                              token: token
                           })
                       });
       
@@ -2894,7 +2897,8 @@ async function createSessionJohnny(data, url_registro, fluxo) {
                               destinatario: data.from,
                               media: media,
                               tipo: "audio",                    
-                              msg: data
+                              msg: data,
+                              token: token
                           })
                       });
       
@@ -2957,7 +2961,8 @@ async function createSessionJohnny(data, url_registro, fluxo) {
                               destinatario: data.from,
                               media: media,
                               tipo: "audio",                    
-                              msg: ""
+                              msg: "",
+                              token: token
                           })
                       });
       
@@ -3023,7 +3028,8 @@ async function createSessionJohnny(data, url_registro, fluxo) {
                               destinatario: data.from,
                               media: media,
                               tipo: "image",
-                              msg: "" // Mensagem opcional
+                              msg: "",
+                              token: token
                           })
                       });
       
@@ -3444,7 +3450,8 @@ client.on('message', async msg => {
                                     destinatario: msg.from,
                                     media: media,
                                     tipo: "audio",                    
-                                    msg: msg
+                                    msg: msg,
+                                    token: token
                                 })
                             });
             
@@ -3507,7 +3514,8 @@ client.on('message', async msg => {
                               destinatario: msg.from,
                               media: media,
                               tipo: "audio",                    
-                              msg: ""
+                              msg: "",
+                              token: token
                           })
                       });
       
@@ -3574,7 +3582,8 @@ client.on('message', async msg => {
                                     destinatario: msg.from,
                                     media: media,
                                     tipo: "image",
-                                    msg: "" // Mensagem opcional
+                                    msg: "",
+                                    token: token
                                 })
                             });
             
@@ -4584,7 +4593,8 @@ client.on('vote_update', async (vote) => {
                             destinatario: vote.voter,
                             media: media,
                             tipo: "audio",                    
-                            msg: vote
+                            msg: vote,
+                            token: token
                         })
                     });
     
@@ -4647,7 +4657,8 @@ client.on('vote_update', async (vote) => {
                               destinatario: vote.voter,
                               media: media,
                               tipo: "audio",                    
-                              msg: ""
+                              msg: "",
+                              token: token
                           })
                       }); 
       
@@ -4713,7 +4724,8 @@ client.on('vote_update', async (vote) => {
                             destinatario: vote.voter,
                             media: media,
                             tipo: "image",
-                            msg: "" // Mensagem opcional
+                            msg: "",
+                            token: token
                         })
                     });
     
