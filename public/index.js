@@ -654,6 +654,42 @@ function attachEventListeners() {
         });
     }
 
+    // Listener para o botão de upload de arquivo de mídia
+const uploadButtonMidia = document.getElementById('uploadButtonMidia');
+    if (uploadButtonMidia) {
+    uploadButtonMidia.addEventListener('click', function() {
+        const fileInputMidia = document.getElementById('fileInputMidia');
+        const fileMidia = fileInputMidia.files[0];
+
+        if (fileMidia) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                // Envia o arquivo de mídia
+                ws.send(JSON.stringify({
+                    action: 'uploadMedia',
+                    fileName: fileMidia.name,
+                    data: content
+                }));
+            };
+            reader.readAsDataURL(fileMidia); // Usamos readAsDataURL para obter o conteúdo do arquivo em base64
+            alert('Arquivo de mídia enviado com sucesso!');
+        } else {
+            alert('Por favor, selecione um arquivo de mídia para carregar.');
+        }
+    });
+    }
+
+// Listener para atualizar o texto ao selecionar um arquivo de mídia
+const fileInputMidia = document.getElementById('fileInputMidia');
+    if (fileInputMidia) {
+    fileInputMidia.addEventListener('change', function() {
+        const fileNameMidia = this.files && this.files.length > 0 ? this.files[0].name : 'Nenhum arquivo selecionado';
+        document.getElementById('fileUploadTextMidia').innerText = fileNameMidia;
+    });
+}
+
+
     // Adiciona o listener para o botão "Iniciar Campanha"
 const iniciarCampanhaBtn = document.getElementById('iniciarCampanha');
 if (iniciarCampanhaBtn) {
@@ -766,7 +802,7 @@ document.addEventListener('DOMContentLoaded', attachEventListeners);
                 // Substituir o conteúdo de mainContent pela seção com botões para abrir as páginas de QR Code
                 mainContent.innerHTML = `
                 <div id="ativarQRCode">
-                    <h2>Ativação de Instâncias do TypeZap</h2>
+                    <h2>Ativação de Instâncias do JohnnyZap</h2>
                     <p>Use os botões abaixo para ativar as instâncias de escuta e envio de mensagens.</p>
                     <div class="button-container" style="margin-top: 20px; display: flex; justify-content: space-around;">
                         <button onclick="window.open('typeListenerQR.html', '_blank')">Ativar Listener QR Code</button>
@@ -779,67 +815,68 @@ document.addEventListener('DOMContentLoaded', attachEventListeners);
             }*/
                                             
 
-            // Verificar se o link clicado é "Ativar meu TypeZap"
-            if (sectionName === "Ativar meu TypeZap AI") {
+            // Verificar se o link clicado é "Ativar meu JohnnyZap"
+            if (sectionName === "Ativar meu JohnnyZap") {
                 // Substituir o conteúdo de mainContent pelo formulário de ativação
                 mainContent.innerHTML = `
-                    <div id="ativarTypeZap">
-                        <h2>Ativar meu TypeZap</h2>
-                        <p>Insira as informações necessárias para ativar seu TypeZap.</p>
-                        <label for="urlField">URL do TypeZap:</label>
-                        <input type="text" id="urlField" placeholder="URL do seu TypeZap">
-                        <small>Endereço URL para conectar o TypeZap.</small><br>
+    <div id="ativarTypeZap">
+        <h2>Ativar meu JohnnyZap</h2>
+        <p>Insira as informações necessárias para ativar seu JohnnyZap.</p>
+        <label for="urlField">URL do JohnnyZap:</label>
+        <input type="text" id="urlField" placeholder="http://seu_ip:3002/api/v1/sessions/">
+        <small>Endereço URL para conectar o JohnnyZap.</small><br>
+        
+        <label for="openAIKey">Chave OpenAI:</label>
+        <input type="text" id="openAIKey" placeholder="Sua chave OpenAI">
+        <small>Chave de API da OpenAI para autenticação.</small><br>
 
-                        <label for="openAIKey">Chave da API OpenAI:</label>
-                        <input type="text" id="openAIKey" placeholder="Sua chave da API OpenAI">
-                        <small>Chave de API necessária para acessar os serviços da OpenAI.</small><br>
+        <label for="elevenLabsKey">Chave ElevenLabs:</label>
+        <input type="text" id="elevenLabsKey" placeholder="Sua chave ElevenLabs">
+        <small>Chave de API da ElevenLabs para autenticação.</small><br>
 
-                        <label for="elevenLabsKey">Chave da ElevenLabs:</label>
-                        <input type="text" id="elevenLabsKey" placeholder="Sua chave da ElevenLabs">
-                        <small>Chave de API para acessar serviços de voz da ElevenLabs.</small><br>
-
-                        <button id="registerTypeZap">Registrar TypeZap</button>
-                        <div id="response" style="margin-top: 20px;"></div>
-                    </div>
+        <button id="registerTypeZap">Registrar JohnnyZap</button>
+        <div id="response" style="margin-top: 20px;"></div>
+    </div>
                 `;
 
-                // Adiciona o listener para o botão "Registrar TypeZap"
+
+                // Adiciona o listener para o botão "Registrar JohnnyZap"
                 document.getElementById('registerTypeZap').addEventListener('click', function() {
                     const url = document.getElementById('urlField').value;
                     const openAIKey = document.getElementById('openAIKey').value;
-                    const elevenLabsKey = document.getElementById('elevenLabsKey').value;
+                    const elevenLabsKey = document.getElementById('elevenLabsKey').value;                    
 
                     // Enviar esses valores para o servidor via WebSocket
-                    // Verifica se a URL é válida
-
-                    // Verifica se a URL é válida
-    if (!(url.startsWith('http://') || url.startsWith('https://'))) {
-        alert('A URL deve começar com "http://" ou "https://".');
-        return; // Interrompe a execução para evitar o envio dos dados
-    }
-  
-    // Verifica se a chave da API OpenAI é válida
-    if (!openAIKey.startsWith('sk-')) {
-        alert('A chave da API OpenAI deve começar com "sk-".');
-        return; // Interrompe a execução para evitar o envio dos dados
-    }
-  
-    // Verifica se a chave da ElevenLabs é válida
-    if (elevenLabsKey.length !== 32) {
-        alert('A chave da ElevenLabs deve ter 32 caracteres.');
-        return; // Interrompe a execução para evitar o envio dos dados
-    }
-    alert('Seu TypeZap foi registrado com sucesso!');
+                    // Verifica se a URL é válida   
+                    if (!(url.startsWith('http://') || url.startsWith('https://'))) {
+    alert('A URL deve começar com "http://" ou "https://".');
+    return; // Interrompe a execução para evitar o envio dos dados
+                    } 
+                    if (!url.endsWith('/sessions/')) {
+    alert('A URL deve terminar com "/sessions/".');
+    return;
+                    }
+                    // Verificação da chave OpenAI
+                    if (!openAIKey.startsWith('sk-')) {
+    alert('A chave OpenAI deve começar com "sk-".');
+    return;
+                    }
+                    // Verificação da chave ElevenLabs
+                    if (elevenLabsKey.length !== 32) {
+    alert('A chave ElevenLabs deve ter 32 caracteres.');
+    return;
+                    }
+    
+                    alert('Seu JohnnyZap foi registrado com sucesso!');
          
                     ws.send(JSON.stringify({
-                        action: 'registerTypeZap',
-                        data: {
-                            url: url,
-                            openAIKey: openAIKey,
-                            elevenLabsKey: elevenLabsKey
-                        }
+                    action: 'registerTypeZap',
+                    data: {
+                    url: url,
+                    openAIKey: openAIKey,
+                    elevenLabsKey: elevenLabsKey
+                    }
                     }));
-                    
 
                 });
             }
@@ -977,6 +1014,24 @@ document.addEventListener('DOMContentLoaded', attachEventListeners);
                 // Re-atacha event listeners para os botões recém-criados
         attachEventListeners();                
             }
+
+            if (sectionName === "Carregar Arquivo de Mídia") {
+                mainContent.innerHTML = `
+                    <div id="carregarArquivoMidia">
+                        <h2>Carregar Arquivo de Mídia</h2>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="fileInputMidia" class="file-upload-input" accept="image/*, audio/*, application/pdf">
+                            <label for="fileInputMidia" class="file-upload-button">Selecione o Arquivo</label>
+                            <div id="fileUploadTextMidia" class="file-upload-text">Nenhum arquivo selecionado</div>
+                        </div>
+                        <button id="uploadButtonMidia">Enviar Midia</button>
+                    </div>
+                `;
+                
+                // Re-atacha event listeners para os botões recém-criados
+                attachEventListeners();
+            }
+                       
 
             if(sectionName === "Disparo de Mensagens em Massa"){
 

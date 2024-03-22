@@ -1,6 +1,6 @@
 {
   "name": "typezapai",
-  "version": "1.3.0",
+  "version": "1.3.2",
   "description": "TypeZapAI Projetado pelo Johnny Love - Uso livre para projetos comerciais, uso condicional para infoprodutos com temática igual ou semelhante ao treinamento TypeZap (entrar em contato)",
   "dependencies": {
     "axios": "latest",

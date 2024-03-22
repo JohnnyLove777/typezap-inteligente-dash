@@ -56,7 +56,6 @@ sudo ufw allow 8083
 echo "Instalando dependências do projeto..."
 npm install
 npm run install-deps
-npm run install-ffmpeg
 
 # Iniciar a aplicação usando PM2
 echo "Iniciando a aplicação com PM2..."
