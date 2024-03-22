@@ -3176,6 +3176,22 @@ async function waitWithDelay(inputString) {
     }
 }
 
+function getMimeType(filePath) {
+  const mimeTypes = {
+      '.mp3': 'audio/mpeg',
+      '.mp4': 'video/mp4',
+      '.jpeg': 'image/jpeg',
+      '.jpg': 'image/jpeg',
+      '.png': 'image/png',
+      '.pdf': 'application/pdf',
+      '.ogg': 'audio/ogg',
+      // Adicione mais mapeamentos conforme necessário
+  };
+
+  const ext = path.extname(filePath).toLowerCase();
+  return mimeTypes[ext] || 'application/octet-stream'; // Tipo padrão se não reconhecido
+}
+
 async function tratarMidia(filePath) {
   try {
       const attachment = await fsp.readFile(filePath, { encoding: 'base64' });
