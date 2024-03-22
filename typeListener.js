@@ -3176,32 +3176,24 @@ async function waitWithDelay(inputString) {
     }
 }
 
-async function tratarMidia(message) {  
-    try {
-      let fileUrl = message.content.url; // URL do arquivo
-      let mimetype;
-      let filename;
-
-      // Use Axios para buscar o arquivo e determinar o MIME type.
-      const attachment = await axios.get(fileUrl, {
-        responseType: 'arraybuffer',
-      }).then(response => {
-        mimetype = response.headers['content-type'];
-        filename = fileUrl.split("/").pop();
-        return response.data.toString('base64');
-      });
+async function tratarMidia(filePath) {
+  try {
+      const attachment = await fsp.readFile(filePath, { encoding: 'base64' });
+      const mimetype = getMimeType(filePath);
+      const filename = path.basename(filePath);
 
       if (attachment) {
-        const media = new MessageMedia(mimetype, attachment, filename);
-        return media;
+          const media = new MessageMedia(mimetype, attachment, filename);
+          return media;
       }
-    } catch (e) {
+  } catch (e) {
       console.error(e);
-    }  
+  }
 }
 
-async function tratarMidiaObj(fileUrl) {  
+async function tratarMidiaObj(message) {  
   try {
+    let fileUrl = message.content.url; // URL do arquivo
     let mimetype;
     let filename;
 
