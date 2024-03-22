@@ -336,7 +336,7 @@ app.post('/sendMessage', async (req, res) => {
                 if (!media) {
                     return res.status(400).json({ status: 'falha', mensagem: 'É preciso fornecer uma midia' });
                 }
-                await sendMessageWithRetry(chatId, new MessageMedia(media.mimetype, media.data, media.filename), {sendAudioAsVoice: true});
+                await sendAudioWithRetry(chatId, new MessageMedia(media.mimetype, media.data, media.filename));
                 break;
             case 'file':
                 if (!media) {
