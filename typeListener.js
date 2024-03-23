@@ -213,6 +213,7 @@ wss.on('connection', function connection(ws) {
       if (parsedMessage.action === 'registerTypeZap') {
         const { url, openAIKey, elevenLabsKey } = parsedMessage.data;
           addObjectSystem(url, openAIKey, elevenLabsKey);
+          initializeClient(openAIKey);
           ws.send('JohnnyZap registrado com sucesso! Pow pow tei tei, pra cima deles!!');
       }
       else if (parsedMessage.action === 'atualizarLista') {

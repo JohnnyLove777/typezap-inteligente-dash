@@ -7,7 +7,7 @@ echo "Certifique-se de acessar a sua VPS com acesso root e ajustar configuraçõ
 echo "====================="
 
 # Marcador de início
-echo "Iniciando Instalação do TypeZap do Johnny"
+echo "Iniciando Instalação do JohnnyZap AI"
 
 # Atualizar os pacotes do sistema
 echo "Atualizando pacotes do sistema..."
@@ -56,6 +56,7 @@ sudo ufw allow 8083
 echo "Instalando dependências do projeto..."
 npm install
 npm run install-deps
+sudo apt install ffmpeg
 
 # Iniciar a aplicação usando PM2
 echo "Iniciando a aplicação com PM2..."
