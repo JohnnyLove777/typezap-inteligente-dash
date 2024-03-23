@@ -3250,6 +3250,23 @@ initializeDBTypebotV5();
 // Inicializando banco de dados dos disparos agendados de respsotas rapidas (Novo Remarketing)
 initializeDBTypebotV6();
 
+const apiInit = readURL(0);
+let openai; // Declaração da variável fora do bloco if
+
+if (apiInit) {    
+    if (apiInit.openaikey) {      
+      openai = new OpenAI({ apiKey: apiInit.openaikey }); // Inicialização da variável
+    } else {
+      console.error("Chave OpenAI não encontrada no objeto.");
+    }
+} else {
+    console.error("Objeto não encontrado no banco de dados.");
+}
+
+async function initializeClient(openaiKey) {    
+    openai = new OpenAI({ apiKey: openaiKey });
+}
+
 client.on("disconnected", async (reason) => {
   try {
       console.info(`Disconnected session: ${session}, reason: ${reason}`);
@@ -3821,80 +3838,116 @@ let system_aux = false;
 
 client.on('message_create', async (msg) => {
 
-  // Comando ping
-  if (msg.fromMe && msg.body.startsWith('!ping') && msg.to === msg.from) {  
-    await sendRequest(msg.from, `Pong`, "text");    
-  } 
-
   // Comandos do central de controle
   if (msg.fromMe && msg.body.startsWith('!help') && msg.to === msg.from) {        
     
-    // Chamar sendRequest ao invés de client.sendMessage
-    await sendRequest(msg.from, `*Sistema de Controle v1.0 - JohnnyZap*
-  
-  *Preparar Typebot (primeira ação)*
-  Comando: "!ativar"
-  
-  *Adicionar Novo Fluxo*
-  Comando: "!adicionar"
-        
-  *Excluir Fluxo*
-  Comando: "!excluir"
-        
-  *Cadastrar Resposta Rápida*
-  Comando: "!rapida"
-        
-  *Excluir Resposta Rápida*
-  Comando: "!rapidaexcluir"
-        
-  *Adicionar Remarketing*
-  Comando: "!rmktadicionar"
-        
-  *Excluir Remarketing*
-  Comando: "!rmktexcluir"
-        
-  *Pegar o ID de um grupo*
-  Envie ao grupo: "Qual o id?"
-        
-  *Excluir grupo*
-  Comando: "!grupoexcluir"
-        
-  *Criar Lista de Grupo*
-  !listagrupo id_grupo listagrupo.json
-  
-  *Carregar Lista para Disparo*
-  Comando: !listacarregar
-        
-  *Disparar Mensagens*
-  !listadisparo lista.json min_delay max_delay init_pos end_pos nome_fluxo`, "text");    
-  } 
-    // Configurar Main Infos do Systema
-  if (msg.fromMe && msg.body === "!ativar" && !existsTheDBSystem() && msg.to === msg.from) {
-      await sendRequest(msg.from, `*Vamos preparar o seu JohnnyZap*
-  
-  Insira a URL do seu Typebot, por exemplo:
-  https://seutypebot.vm.elestio.app/api/v1/sessions/`, "text");
-  
-  addObjectSelf(msg.from, 'stepAtivar01', JSON.stringify(msg.id.id), 'done', null, null, null);
-    }
-  
-    if ((msg.body.startsWith('http://') || msg.body.startsWith('https://')) && msg.fromMe && msg.body !== null && msg.to === msg.from && !existsTheDBSystem() && existsDBSelf(msg.from) && readFlowSelf(msg.from) === 'stepAtivar01' && readIdSelf(msg.from) !== JSON.stringify(msg.id.id) && readInteractSelf(msg.from) === 'done' && !msg.hasMedia) {
-      updateInteractSelf(msg.from, 'typing');
-      updateIdSelf(msg.from, JSON.stringify(msg.id.id));
-      updateURLRegistro(msg.from, msg.body);
-  
-  await sendRequest(msg.from, `Typebot preparado! 🚀
-  
-  ${readURLRegistro(msg.from)}
-  
-  *Pode começar a usar o sistema* 🤖`, "text");
-  
-      addObjectSystem(await readURLRegistro(msg.from));
-      updateFlowSelf(msg.from,'stepAtivar02');
-      updateInteractSelf(msg.from, 'done');
-      deleteObjectSelf(msg.from);
+  // Chamar sendRequest ao invés de client.sendMessage
+  await sendRequest(msg.from, `*Sistema de Controle v1.0 - TypeZapIA*
+
+*Preparar Typebot (primeira ação)*
+Comando: "!ativar"
+
+*Adicionar Novo Fluxo*
+Comando: "!adicionar"
       
-    }
+*Excluir Fluxo*
+Comando: "!excluir"
+      
+*Cadastrar Resposta Rápida*
+Comando: "!rapida"
+      
+*Excluir Resposta Rápida*
+Comando: "!rapidaexcluir"
+      
+*Adicionar Remarketing*
+Comando: "!rmktadicionar"
+      
+*Excluir Remarketing*
+Comando: "!rmktexcluir"
+      
+*Pegar o ID de um grupo*
+Envie ao grupo: "Qual o id?"
+      
+*Excluir grupo*
+Comando: "!grupoexcluir"
+      
+*Criar Lista de Grupo*
+!listagrupo id_grupo listagrupo.json
+
+*Carregar Lista para Disparo*
+Comando: !listacarregar
+      
+*Disparar Mensagens*
+!listadisparo lista.json min_delay max_delay init_pos end_pos nome_fluxo`, "text");    
+  }
+
+  // Configurar Main Infos do Systema
+  if (msg.fromMe && msg.body === "!ativar" && !existsTheDBSystem() && msg.to === msg.from) {
+    await sendRequest(msg.from, `*Vamos preparar o seu TypeZapIA*
+Separe os seguintes itens: *URL do seu Typebot*, *API Key da OpenAI*, *API Key da ElevenLabs*
+
+Resete o processo a qualquer momento digitando "00"
+
+Vamos começar com a a URL do seu Typebot, por exemplo:
+https://seutypebot.vm.elestio.app/api/v1/sessions/`, "text");
+addObjectSelf(msg.from, 'stepAtivar01', JSON.stringify(msg.id.id), 'done', null, null, null);
+  }
+
+  if ((msg.body.startsWith('http://') || msg.body.startsWith('https://')) && msg.fromMe && msg.body !== null && msg.to === msg.from && !existsTheDBSystem() && existsDBSelf(msg.from) && readFlowSelf(msg.from) === 'stepAtivar01' && readIdSelf(msg.from) !== JSON.stringify(msg.id.id) && readInteractSelf(msg.from) === 'done' && !msg.hasMedia) {
+    updateInteractSelf(msg.from, 'typing');
+    updateIdSelf(msg.from, JSON.stringify(msg.id.id));
+    updateURLRegistro(msg.from, msg.body);
+
+await sendRequest(msg.from, `URL Registrada! 🚀
+
+${readURLRegistro(msg.from)}
+
+*Insira agora a API Key da OpenAI* 🤖`, "text");
+    //addObjectSystem(await readURLRegistro(msg.from));
+    updateFlowSelf(msg.from,'stepAtivar02');
+    updateInteractSelf(msg.from, 'done');
+    //deleteObjectSelf(msg.from);    
+  }
+
+  if (msg.body.startsWith('sk-') && msg.fromMe && msg.body !== null && msg.to === msg.from && !existsTheDBSystem() && existsDBSelf(msg.from) && readFlowSelf(msg.from) === 'stepAtivar02' && readIdSelf(msg.from) !== JSON.stringify(msg.id.id) && readInteractSelf(msg.from) === 'done' && !msg.hasMedia) {
+    updateInteractSelf(msg.from, 'typing');
+    updateIdSelf(msg.from, JSON.stringify(msg.id.id));    
+    updateGatilho(msg.from, msg.body);
+
+await sendRequest(msg.from, `API Key da OpenAI Registrada! 🚀
+
+${readGatilho(msg.from)}
+
+*Insira agora a API Key da ElevenLabs* 🤖`, "text");
+    //addObjectSystem(await readURLRegistro(msg.from));
+    updateFlowSelf(msg.from,'stepAtivar03');
+    updateInteractSelf(msg.from, 'done');
+    //deleteObjectSelf(msg.from);    
+  }
+
+  if (msg.body.length === 32 && msg.fromMe && msg.body !== null && msg.to === msg.from && !existsTheDBSystem() && existsDBSelf(msg.from) && readFlowSelf(msg.from) === 'stepAtivar03' && readIdSelf(msg.from) !== JSON.stringify(msg.id.id) && readInteractSelf(msg.from) === 'done' && !msg.hasMedia) {
+    updateInteractSelf(msg.from, 'typing');
+    updateIdSelf(msg.from, JSON.stringify(msg.id.id));
+    updateName(msg.from, msg.body);
+
+    // Obtendo as chaves API
+    const url = await readURLRegistro(msg.from);
+    const openaiKey = await readGatilho(msg.from);
+    const elevenLabsKey = await readName(msg.from);
+
+    // Inicializando os clientes
+    await initializeClient(openaiKey);
+
+    await sendRequest(msg.from, `API ElevenLabs registrada! 🚀
+
+    ${readName(msg.from)}
+
+    *Pode usar o seu TypeZapIA!!* 🤖`, "text");    
+    addObjectSystem(url, openaiKey, elevenLabsKey);
+    updateFlowSelf(msg.from, 'stepAtivar04');
+    updateInteractSelf(msg.from, 'done');
+    deleteObjectSelf(msg.from);    
+  }
   
   // Resetar Step Self
   if (msg.fromMe && msg.body === "00" && msg.to === msg.from) {
@@ -3912,7 +3965,7 @@ Por exemplo:\nhttps://seutype.vm.elestio.app/api/v1/typebots/seufunil/startChat\
 
 _Resete o processo a qualquer momento digitando "00"_
 *Insira o link abaixo* ⬇️`, "text");
-    await delay(3000);
+    await delay(8888);
     addObjectSelf(msg.from, 'stepAdicionar01', JSON.stringify(msg.id.id), 'done', null, null, null);
    
   }
@@ -4304,7 +4357,7 @@ _Resete o processo a qualquer momento digitando "00"_
         if (fs.existsSync(`./${nomeArquivo}`)) {                
           const arquivoMedia = MessageMedia.fromFilePath(`./${nomeArquivo}`);
           //await client.sendMessage(msg.from, MessageMedia.fromFilePath(`./${nomeArquivo}.json`));
-          await sendMessage(msg.from, arquivoMedia);
+          await client.sendMessage(msg.from, arquivoMedia);
           break; // Encerra o loop após enviar o arquivo
         }
         // Aguarda 1 segundo antes de verificar novamente
