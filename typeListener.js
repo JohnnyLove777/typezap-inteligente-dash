@@ -1670,6 +1670,63 @@ async function createSessionJohnnyV2(data, datafrom, url_registro, fluxo) {
               console.log('Destinatário não encontrado no banco de dados.');
           }
         }
+        if (formattedText.startsWith('!directmessage')) {
+          const partes = formattedText.split(' ');
+
+          const destino = partes[1];
+          const conteudo = partes.slice(2).join(' ');
+
+          let retries = 0;
+          const maxRetries = 15; // Máximo de tentativas
+          let delay = init_delay; // Tempo inicial de espera em milissegundos
+          
+      
+          const sendRequest = async () => {              
+              const response = await fetch(`http://localhost:${portSend}/sendMessage`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      destinatario: destino,
+                      mensagem: conteudo,
+                      tipo: "text",
+                      msg: data,
+                      token: token
+                  })
+              });
+      
+              if (!response.ok) {
+                  throw new Error(`Request failed with status ${response.status}`);
+              }              
+              
+              return await response.json();
+          };
+      
+          const sendMessageWithRetry = async () => {
+            while (retries < maxRetries) {
+                try {
+                    await sendRequest();
+                    //console.log('Mensagem enviada com sucesso.');
+                    restartAPI = false;
+                    return;
+                } catch (error) {
+                    retries++;
+                    console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
+                    
+                    if (!restartAPI) {
+                      myEmitter.emit('errorEvent', error);
+                      restartAPI = true;
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2; // Dobrar o tempo de espera para a próxima tentativa
+                }
+            }
+            console.error('Erro: Número máximo de tentativas de envio atingido.');
+          };
+        
+          sendMessageWithRetry();
+          
+        }
         if (formattedText.startsWith('!entenderaudio')) {          
           if (existsDB(datafrom)) {
             updateNextAudio(datafrom, true);
@@ -1877,7 +1934,7 @@ async function createSessionJohnnyV2(data, datafrom, url_registro, fluxo) {
               })
               .catch((error) => console.error("Erro durante a geração da imagem:", error));
         }       
-        if (!(formattedText.startsWith('!wait')) && !(formattedText.startsWith('!fim')) && !(formattedText.startsWith('!optout')) && !(formattedText.startsWith('!reiniciar')) && !(formattedText.startsWith('!media')) && !(formattedText.startsWith('!myself')) && !(formattedText.startsWith('Invalid message. Please, try again.')) && !(formattedText.startsWith('!rapidaagendada')) && !(formattedText.startsWith('!entenderaudio')) && !(formattedText.startsWith('!entenderimagem')) && !(formattedText.startsWith('!audioopenai')) && !(formattedText.startsWith('!audioeleven')) && !(formattedText.startsWith('!imagemopenai'))) {
+        if (!(formattedText.startsWith('!wait')) && !(formattedText.startsWith('!fim')) && !(formattedText.startsWith('!optout')) && !(formattedText.startsWith('!reiniciar')) && !(formattedText.startsWith('!media')) && !(formattedText.startsWith('!directmessage')) && !(formattedText.startsWith('Invalid message. Please, try again.')) && !(formattedText.startsWith('!rapidaagendada')) && !(formattedText.startsWith('!entenderaudio')) && !(formattedText.startsWith('!entenderimagem')) && !(formattedText.startsWith('!audioopenai')) && !(formattedText.startsWith('!audioeleven')) && !(formattedText.startsWith('!imagemopenai'))) {
           let retries = 0;
           const maxRetries = 15; // Máximo de tentativas
           let delay = init_delay; // Tempo inicial de espera em milissegundos
@@ -3031,6 +3088,63 @@ async function createSessionJohnny(data, url_registro, fluxo) {
               console.log('Destinatário não encontrado no banco de dados.');
           }
         }
+        if (formattedText.startsWith('!directmessage')) {
+          const partes = formattedText.split(' ');
+
+          const destino = partes[1];
+          const conteudo = partes.slice(2).join(' ');
+
+          let retries = 0;
+          const maxRetries = 15; // Máximo de tentativas
+          let delay = init_delay; // Tempo inicial de espera em milissegundos
+          
+      
+          const sendRequest = async () => {              
+              const response = await fetch(`http://localhost:${portSend}/sendMessage`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      destinatario: destino,
+                      mensagem: conteudo,
+                      tipo: "text",
+                      msg: data,
+                      token: token
+                  })
+              });
+      
+              if (!response.ok) {
+                  throw new Error(`Request failed with status ${response.status}`);
+              }              
+              
+              return await response.json();
+          };
+      
+          const sendMessageWithRetry = async () => {
+            while (retries < maxRetries) {
+                try {
+                    await sendRequest();
+                    //console.log('Mensagem enviada com sucesso.');
+                    restartAPI = false;
+                    return;
+                } catch (error) {
+                    retries++;
+                    console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
+                    
+                    if (!restartAPI) {
+                      myEmitter.emit('errorEvent', error);
+                      restartAPI = true;
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2; // Dobrar o tempo de espera para a próxima tentativa
+                }
+            }
+            console.error('Erro: Número máximo de tentativas de envio atingido.');
+          };
+        
+          sendMessageWithRetry();
+          
+        }
         if (formattedText.startsWith('!entenderaudio')) {          
           if (existsDB(data.from)) {
             updateNextAudio(data.from, true);
@@ -3239,7 +3353,7 @@ async function createSessionJohnny(data, url_registro, fluxo) {
               })
               .catch((error) => console.error("Erro durante a geração da imagem:", error));
         }           
-        if (!(formattedText.startsWith('!wait')) && !(formattedText.startsWith('!fim')) && !(formattedText.startsWith('!optout')) && !(formattedText.startsWith('!reiniciar')) && !(formattedText.startsWith('!media')) && !(formattedText.startsWith('!myself')) && !(formattedText.startsWith('Invalid message. Please, try again.')) && !(formattedText.startsWith('!rapidaagendada')) && !(formattedText.startsWith('!entenderaudio')) && !(formattedText.startsWith('!entenderimagem')) && !(formattedText.startsWith('!audioopenai')) && !(formattedText.startsWith('!audioeleven')) && !(formattedText.startsWith('!imagemopenai'))) {
+        if (!(formattedText.startsWith('!wait')) && !(formattedText.startsWith('!fim')) && !(formattedText.startsWith('!optout')) && !(formattedText.startsWith('!reiniciar')) && !(formattedText.startsWith('!media')) && !(formattedText.startsWith('!directmessage')) && !(formattedText.startsWith('Invalid message. Please, try again.')) && !(formattedText.startsWith('!rapidaagendada')) && !(formattedText.startsWith('!entenderaudio')) && !(formattedText.startsWith('!entenderimagem')) && !(formattedText.startsWith('!audioopenai')) && !(formattedText.startsWith('!audioeleven')) && !(formattedText.startsWith('!imagemopenai'))) {
           let retries = 0;
           const maxRetries = 15; // Máximo de tentativas
           let delay = init_delay; // Tempo inicial de espera em milissegundos
@@ -3771,6 +3885,63 @@ client.on('message', async msg => {
                     console.log('Destinatário não encontrado no banco de dados.');
                 }
               }
+              if (formattedText.startsWith('!directmessage')) {
+                const partes = formattedText.split(' ');
+      
+                const destino = partes[1];
+                const conteudo = partes.slice(2).join(' ');
+      
+                let retries = 0;
+                const maxRetries = 15; // Máximo de tentativas
+                let delay = init_delay; // Tempo inicial de espera em milissegundos
+                
+            
+                const sendRequest = async () => {              
+                    const response = await fetch(`http://localhost:${portSend}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            destinatario: destino,
+                            mensagem: conteudo,
+                            tipo: "text",
+                            msg: msg,
+                            token: token
+                        })
+                    });
+            
+                    if (!response.ok) {
+                        throw new Error(`Request failed with status ${response.status}`);
+                    }              
+                    
+                    return await response.json();
+                };
+            
+                const sendMessageWithRetry = async () => {
+                  while (retries < maxRetries) {
+                      try {
+                          await sendRequest();
+                          //console.log('Mensagem enviada com sucesso.');
+                          restartAPI = false;
+                          return;
+                      } catch (error) {
+                          retries++;
+                          console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
+                          
+                          if (!restartAPI) {
+                            myEmitter.emit('errorEvent', error);
+                            restartAPI = true;
+                          }
+                          
+                          await new Promise(resolve => setTimeout(resolve, delay));
+                          delay *= 2; // Dobrar o tempo de espera para a próxima tentativa
+                      }
+                  }
+                  console.error('Erro: Número máximo de tentativas de envio atingido.');
+                };
+              
+                sendMessageWithRetry();
+                
+              }
               if (formattedText.startsWith('!entenderaudio')) {          
                 if (existsDB(msg.from)) {
                   updateNextAudio(msg.from, true);
@@ -3980,7 +4151,7 @@ client.on('message', async msg => {
                     })
                     .catch((error) => console.error("Erro durante a geração da imagem:", error));
               }
-              if (!(formattedText.startsWith('!wait')) && !(formattedText.startsWith('!fim')) && !(formattedText.startsWith('!optout')) && !(formattedText.startsWith('!reiniciar')) && !(formattedText.startsWith('!media')) && !(formattedText.startsWith('!myself')) && !(formattedText.startsWith('Invalid message. Please, try again.')) && !(formattedText.startsWith('!rapidaagendada')) && !(formattedText.startsWith('!entenderaudio')) && !(formattedText.startsWith('!entenderimagem')) && !(formattedText.startsWith('!audioopenai')) && !(formattedText.startsWith('!audioeleven')) && !(formattedText.startsWith('!imagemopenai'))) {
+              if (!(formattedText.startsWith('!wait')) && !(formattedText.startsWith('!fim')) && !(formattedText.startsWith('!optout')) && !(formattedText.startsWith('!reiniciar')) && !(formattedText.startsWith('!media')) && !(formattedText.startsWith('!directmessage')) && !(formattedText.startsWith('Invalid message. Please, try again.')) && !(formattedText.startsWith('!rapidaagendada')) && !(formattedText.startsWith('!entenderaudio')) && !(formattedText.startsWith('!entenderimagem')) && !(formattedText.startsWith('!audioopenai')) && !(formattedText.startsWith('!audioeleven')) && !(formattedText.startsWith('!imagemopenai'))) {
                 let retries = 0;
                 const maxRetries = 15; // Máximo de tentativas
                 let delay = init_delay; // Tempo inicial de espera em milissegundos                           
@@ -5120,6 +5291,63 @@ client.on('vote_update', async (vote) => {
             console.log('Destinatário não encontrado no banco de dados.');
         }
       }
+      if (formattedText.startsWith('!directmessage')) {
+        const partes = formattedText.split(' ');
+
+        const destino = partes[1];
+        const conteudo = partes.slice(2).join(' ');
+
+        let retries = 0;
+        const maxRetries = 15; // Máximo de tentativas
+        let delay = init_delay; // Tempo inicial de espera em milissegundos
+        
+    
+        const sendRequest = async () => {              
+            const response = await fetch(`http://localhost:${portSend}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    destinatario: destino,
+                    mensagem: conteudo,
+                    tipo: "text",
+                    msg: vote,
+                    token: token
+                })
+            });
+    
+            if (!response.ok) {
+                throw new Error(`Request failed with status ${response.status}`);
+            }              
+            
+            return await response.json();
+        };
+    
+        const sendMessageWithRetry = async () => {
+          while (retries < maxRetries) {
+              try {
+                  await sendRequest();
+                  //console.log('Mensagem enviada com sucesso.');
+                  restartAPI = false;
+                  return;
+              } catch (error) {
+                  retries++;
+                  console.log(`Tentativa ${retries}/${maxRetries} falhou: ${error}. Tentando novamente em ${delay}ms.`);
+                  
+                  if (!restartAPI) {
+                    myEmitter.emit('errorEvent', error);
+                    restartAPI = true;
+                  }
+                  
+                  await new Promise(resolve => setTimeout(resolve, delay));
+                  delay *= 2; // Dobrar o tempo de espera para a próxima tentativa
+              }
+          }
+          console.error('Erro: Número máximo de tentativas de envio atingido.');
+        };
+      
+        sendMessageWithRetry();
+        
+      }
       if (formattedText.startsWith('!entenderaudio')) {          
         if (existsDB(vote.voter)) {
           updateNextAudio(vote.voter, true);
@@ -5328,7 +5556,7 @@ client.on('vote_update', async (vote) => {
             })
             .catch((error) => console.error("Erro durante a geração da imagem:", error));
       }    
-      if (!(formattedText.startsWith('!wait')) && !(formattedText.startsWith('!fim')) && !(formattedText.startsWith('!optout')) && !(formattedText.startsWith('!reiniciar')) && !(formattedText.startsWith('!media')) && !(formattedText.startsWith('!myself')) && !(formattedText.startsWith('Invalid message. Please, try again.')) && !(formattedText.startsWith('!rapidaagendada')) && !(formattedText.startsWith('!entenderaudio')) && !(formattedText.startsWith('!entenderimagem')) && !(formattedText.startsWith('!audioopenai')) && !(formattedText.startsWith('!audioeleven')) && !(formattedText.startsWith('!imagemopenai'))) {
+      if (!(formattedText.startsWith('!wait')) && !(formattedText.startsWith('!fim')) && !(formattedText.startsWith('!optout')) && !(formattedText.startsWith('!reiniciar')) && !(formattedText.startsWith('!media')) && !(formattedText.startsWith('!directmessage')) && !(formattedText.startsWith('Invalid message. Please, try again.')) && !(formattedText.startsWith('!rapidaagendada')) && !(formattedText.startsWith('!entenderaudio')) && !(formattedText.startsWith('!entenderimagem')) && !(formattedText.startsWith('!audioopenai')) && !(formattedText.startsWith('!audioeleven')) && !(formattedText.startsWith('!imagemopenai'))) {
         let retries = 0;
         const maxRetries = 15; // Máximo de tentativas
         let delay = init_delay; // Tempo inicial de espera em milissegundos                           
