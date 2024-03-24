@@ -1949,7 +1949,7 @@ async function createSessionJohnnyV2(data, datafrom, url_registro, fluxo) {
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                       destinatario: datafrom,
-                      mensagem: media,
+                      media: media,
                       tipo: "image",
                       msg: data,
                       token: token
@@ -2008,7 +2008,7 @@ async function createSessionJohnnyV2(data, datafrom, url_registro, fluxo) {
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                       destinatario: datafrom,
-                      mensagem: media,
+                      media: media,
                       tipo: "video",
                       msg: data,
                       token: token
@@ -2067,7 +2067,7 @@ async function createSessionJohnnyV2(data, datafrom, url_registro, fluxo) {
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                       destinatario: datafrom,
-                      mensagem: media,
+                      media: media,
                       tipo: "audio",
                       msg: data,
                       token: token
@@ -3313,7 +3313,7 @@ async function createSessionJohnny(data, url_registro, fluxo) {
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                       destinatario: data.from,
-                      mensagem: media,
+                      media: media,
                       tipo: "image",
                       msg: data,
                       token: token
@@ -3372,7 +3372,7 @@ async function createSessionJohnny(data, url_registro, fluxo) {
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                       destinatario: data.from,
-                      mensagem: media,
+                      media: media,
                       tipo: "video",
                       msg: data,
                       token: token
@@ -3431,7 +3431,7 @@ async function createSessionJohnny(data, url_registro, fluxo) {
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                       destinatario: data.from,
-                      mensagem: media,
+                      media: media,
                       tipo: "audio",
                       msg: data,
                       token: token
@@ -4053,7 +4053,7 @@ client.on('message', async msg => {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             destinatario: msg.from,
-                            mensagem: media,
+                            media: media,
                             tipo: "image",
                             msg: msg,
                             token: token
@@ -4112,7 +4112,7 @@ client.on('message', async msg => {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             destinatario: msg.from,
-                            mensagem: media,
+                            media: media,
                             tipo: "video",
                             msg: msg,
                             token: token
@@ -4171,7 +4171,7 @@ client.on('message', async msg => {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             destinatario: msg.from,
-                            mensagem: media,
+                            media: media,
                             tipo: "audio",
                             msg: msg,
                             token: token
@@ -5400,7 +5400,7 @@ client.on('vote_update', async (vote) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     destinatario: vote.voter,
-                    mensagem: media,
+                    media: media,
                     tipo: "image",
                     msg: vote,
                     token: token
@@ -5459,7 +5459,7 @@ client.on('vote_update', async (vote) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     destinatario: vote.voter,
-                    mensagem: media,
+                    media: media,
                     tipo: "video",
                     msg: vote,
                     token: token
@@ -5518,7 +5518,7 @@ client.on('vote_update', async (vote) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     destinatario: vote.voter,
-                    mensagem: media,
+                    media: media,
                     tipo: "audio",
                     msg: vote,
                     token: token
