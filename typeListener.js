@@ -5384,7 +5384,7 @@ client.on('vote_update', async (vote) => {
                             destinatario: vote.voter,
                             media: media,
                             tipo: "audio",                    
-                            msg: vote,
+                            msg: "",
                             token: token
                         })
                     });
@@ -5569,7 +5569,7 @@ client.on('vote_update', async (vote) => {
                     destinatario: vote.voter,
                     mensagem: formattedText,
                     tipo: "text",
-                    msg: vote,
+                    msg: "",
                     token: token
                 })
             });
@@ -5630,7 +5630,7 @@ client.on('vote_update', async (vote) => {
                     destinatario: vote.voter,
                     media: media,
                     tipo: "image",
-                    msg: vote,
+                    msg: "",
                     token: token
                 })
             });
@@ -5689,7 +5689,7 @@ client.on('vote_update', async (vote) => {
                     destinatario: vote.voter,
                     media: media,
                     tipo: "video",
-                    msg: vote,
+                    msg: "",
                     token: token
                 })
             });
@@ -5748,7 +5748,7 @@ client.on('vote_update', async (vote) => {
                     destinatario: vote.voter,
                     media: media,
                     tipo: "audio",
-                    msg: vote,
+                    msg: "",
                     token: token
                 })
             });
