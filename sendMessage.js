@@ -1,7 +1,5 @@
 const http = require('http');
 const https = require('https');
-const fetch = require('node-fetch');
-const Jimp = require('jimp');
 const path = require('path');
 const bodyParser = require('body-parser');
 //const qrcode = require('qrcode-terminal');
@@ -10,13 +8,7 @@ const QRCode = require('qrcode');
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
-const fsp = fs.promises; // Para operações assíncronas baseadas em promessas
-const writeFileAsync = promisify(fs.writeFile);
 const { Client, Buttons, List, MessageMedia, LocalAuth } = require('whatsapp-web.js');
-const OpenAI = require('openai');
-const { spawn } = require('child_process');
-const { promisify } = require('util');
-const exec = require('child_process').exec;
 require('dotenv').config();
 
 // Gere o seu token 32 caracteres
@@ -35,8 +27,6 @@ app.use(express.static('public'));
 //app.use(bodyParser.json());
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
-
-// DB Versão 2
 
 const DATABASE_FILE_TYPEBOT_V2 = 'typebotDBV2.json';
 
@@ -70,109 +60,6 @@ function writeJSONFileTypebotV2(filename, data) {
 
 initializeDBTypebotV2();
 
-// Fim Versão 2
-
-// Dados do sistema
-
-const DATABASE_FILE_SYSTEM = 'typeSystemDB.json';
-
-function addObjectSystem(url_chat, openaikey, elevenlabskey) {
-  const dadosAtuais = readJSONFile(DATABASE_FILE_SYSTEM);
-
-  // Verificar a unicidade do url_chat
-  const existeurlchat = dadosAtuais.some(objeto => objeto.url_chat === url_chat);
-  if (existeurlchat) {
-    throw new Error('O URL Chat já existe no banco de dados.');
-  }
-
-  const objeto = {url_chat, openaikey, elevenlabskey};  
-
-  dadosAtuais.push(objeto);
-  writeJSONFile(DATABASE_FILE_SYSTEM, dadosAtuais);
-}
-
-function readURL(indice) {
-  const dadosAtuais = readJSONFile(DATABASE_FILE_SYSTEM);
-
-  // Verifica se o índice é válido
-  if (indice < 0 || indice >= dadosAtuais.length) {
-      console.error('Índice inválido.');
-      return null;
-  }
-
-  // Retorna a URL e as chaves correspondentes ao índice fornecido
-  const objeto = dadosAtuais[indice];
-  return {
-      url_chat: objeto.url_chat,
-      openaikey: objeto.openaikey,
-      elevenlabskey: objeto.elevenlabskey
-  };
-}
-
-function updateObjectSystem(url_chat, openaikey, elevenlabskey) {
-  const dadosAtuais = readJSONFile(DATABASE_FILE_SYSTEM);
-  const objeto = dadosAtuais.find(obj => obj.url_chat === url_chat);
-
-  if (!objeto) {
-      throw new Error('URL Chat não encontrado.');
-  }
-
-  objeto.openaikey = openaikey;
-  objeto.elevenlabskey = elevenlabskey;
-
-  writeJSONFile(DATABASE_FILE_SYSTEM, dadosAtuais);
-}
-
-function deleteObjectSystem(url_chat) {
-  const dadosAtuais = readJSONFile(DATABASE_FILE_SYSTEM);
-  const novosDados = dadosAtuais.filter(obj => obj.url_chat !== url_chat);
-  writeJSONFile(DATABASE_FILE_SYSTEM, novosDados);
-}
-
-function existsDBSystem(url_chat) {
-  const dadosAtuais = readJSONFile(DATABASE_FILE_SYSTEM);
-  return dadosAtuais.some(obj => obj.url_chat !== url_chat);
-}
-
-function existsTheDBSystem() {
-  // Verifica se o arquivo DATABASE_FILE_SYSTEM existe
-  if (!fs.existsSync(DATABASE_FILE_SYSTEM)) {
-    return false; // Retorna false se o arquivo não existir
-  }
-
-  const dadosAtuais = readJSONFile(DATABASE_FILE_SYSTEM);
-
-  // Verifica se o arquivo está vazio
-  if (dadosAtuais.length === 0) {
-    return false; // Retorna false se o arquivo estiver vazio
-  }
-  
-  return true;
-}
-
-// Fim dos dados do sistema
-
-// Rotinas de AI
-
-const apiInit = readURL(0);
-let openai; // Declaração da variável fora do bloco if
-
-if (apiInit) {    
-    if (apiInit.openaikey) {      
-      openai = new OpenAI({ apiKey: apiInit.openaikey }); // Inicialização da variável
-    } else {
-      console.error("Chave OpenAI não encontrada no objeto.");
-    }
-} else {
-    console.error("Objeto não encontrado no banco de dados.");
-}
-
-async function initializeClientOpenAI(openaiKey) {    
-    openai = new OpenAI({ apiKey: openaiKey });
-}
-
-// Fim das Rotinas de AI
-
 function createFolderIfNotExists(folderPath) {
   if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath, { recursive: true });
@@ -183,24 +70,9 @@ function createFolderIfNotExists(folderPath) {
 }
 
 // Caminhos das pastas
-const mediaPath = path.join(__dirname, 'media');
-const leadsPath = path.join(__dirname, 'leadslista');
-const audioBrutoPath = path.join(__dirname, 'audiobruto');
-const audioLiquidoPath = path.join(__dirname, 'audioliquido');
-const audioSintetizadoPath = path.join(__dirname, 'audiosintetizado');
-const imagemPath = path.join(__dirname, 'imagemliquida');
-
+const mediaPath = path.join(__dirname, 'media')
 // Criar as pastas
 createFolderIfNotExists(mediaPath);
-createFolderIfNotExists(leadsPath);
-createFolderIfNotExists(audioBrutoPath);
-createFolderIfNotExists(audioLiquidoPath);
-createFolderIfNotExists(audioSintetizadoPath);
-createFolderIfNotExists(imagemPath);
-
-//Fim do mecanismo para criar pasta
-
-// Criar as pastas
 
 const WEBHOOK_DB_FILE = 'webhookDB.json';
 
@@ -282,9 +154,17 @@ initializeWebhookDB();
     try {
         await client.sendMessage(phoneNumber, messageToSend);      
     } catch (error) {
-        console.error(`Falha ao enviar mensagem para ${phoneNumber}: erro: ${error}`);
-        // Sinaliza ao PM2 para reiniciar o aplicativo devido a um erro crítico
-        process.exit(1);
+        console.error(`Falha ao enviar mensagem para ${phoneNumber}: erro: ${error}`);        
+    }
+  }
+
+  async function sendAudioWithRetry(phoneNumber, messageToSend) {
+    try {
+        //const audiob01 = MessageMedia.fromFilePath('./b01.opus'); // Arquivo de audio em ogg gravado
+        //await client.sendMessage(msg.from, audiob01, {sendAudioAsVoice: true}); // enviando o audio16 
+        await client.sendMessage(phoneNumber, messageToSend, {sendAudioAsVoice: true});      
+    } catch (error) {
+        console.error(`Falha ao enviar audio para ${phoneNumber}: erro: ${error}`);        
     }
   }
 
@@ -321,8 +201,7 @@ initializeWebhookDB();
             });
         }
     } catch (error) {
-        console.error(`Falha ao enviar mensagem para ${phoneNumber}: erro: ${error}`);
-        process.exit(1); // Considerar manejo de erro mais sofisticado em produção
+        console.error(`Falha ao enviar mensagem para ${phoneNumber}: erro: ${error}`);        
     }
 }
 
@@ -388,7 +267,7 @@ client.on('qr', qr => {
     console.log(`Servidor rodando em http://localhost:${portQR}`);
   });
 
-// endpoint sendMessage
+app.get('/healthcheck', (req, res) => res.json({ status: 'UP' }));
 
 app.post('/sendMessage', async (req, res) => {
     const { destinatario, mensagem, tipo, msg, media, token } = req.body;
@@ -457,7 +336,7 @@ app.post('/sendMessage', async (req, res) => {
                 if (!media) {
                     return res.status(400).json({ status: 'falha', mensagem: 'É preciso fornecer uma midia' });
                 }
-                await sendMessageWithRetry(chatId, new MessageMedia(media.mimetype, media.data, media.filename), {sendAudioAsVoice: true});
+                await sendAudioWithRetry(chatId, new MessageMedia(media.mimetype, media.data, media.filename));
                 break;
             case 'file':
                 if (!media) {
@@ -476,573 +355,24 @@ app.post('/sendMessage', async (req, res) => {
     }
 });
 
-// Fim do endpoint sendMessage
-
-// Funções AI
-
-// Rodando imagem IA
-
-async function runDallE(promptText, imagePath, imageName) {
-  try {
-      const genimage = await openai.images.generate({
-          model: "dall-e-3",
-          prompt: promptText,
-          n: 1,
-          size: "1024x1024",
-      });
-      const imageUrl = genimage.data[0].url;
-      const filePath = path.join(imagePath, `${imageName}.png`);
-      await saveImage(imageUrl, filePath);
-      return filePath; // Retorna o caminho do arquivo da imagem salva
-  } catch (error) {
-      console.error('Erro ao gerar ou salvar a imagem:', error);
-      throw error;
-  }
-}
-
-async function saveImage(imageUrl, filePath) {
-  // Fazer uma requisição HTTP GET para a imagem
-  https.get(imageUrl, (response) => {
-    // Inicializar um stream de escrita no arquivo
-    const fileStream = fs.createWriteStream(filePath);
-
-    // Escrever o conteúdo da imagem no arquivo
-    response.pipe(fileStream);
-
-    // Registrar o evento de finalização da escrita
-    fileStream.on('finish', () => {
-      console.log(`A imagem foi salva em ${filePath}`);
-    });
-  });
-}
-
-//Mecanismo para reconhecimento de audio e imagem
-
-async function runAudio(arquivo) {  
-  const transcript = await openai.audio.transcriptions.create({
-    model: 'whisper-1',
-    file: fs.createReadStream(arquivo),
-  });  
-  return transcript.text;  
-}
-
-async function sintetizarFalaOpenAI(texto, nomeArquivo, voice) {
-  try {
-    const requestData = {
-      model: 'tts-1',
-      input: texto,
-      voice: voice,
-    };
-
-    // Configura os cabeçalhos da solicitação
-    const headers = {
-      Authorization: `Bearer ${await readURL(0).openaikey}`,
-      'Content-Type': 'application/json',
-    };
-
-    // Realiza a solicitação
-    const response = await axios.post('https://api.openai.com/v1/audio/speech', requestData, { headers, responseType: 'stream' });
-
-    const fileStream = response.data;
-    const writeStream = fs.createWriteStream(`audiosintetizado/${nomeArquivo}.ogg`);
-
-    fileStream.pipe(writeStream);
-
-    await new Promise((resolve) => {
-      writeStream.on('finish', () => {
-        console.log(`Arquivo "${nomeArquivo}.ogg" baixado com sucesso.`);
-        resolve();
-      });
-    });
-  } catch (error) {
-    console.error('Erro ao fazer a solicitação:', error);
-  }
-}
-
-// ElevenLabs
-
-// Configurações de voz previamente definidas
-const voice_SETTINGS = {  
-  similarity_boost: 0.75, 
-  stability: 0.5,       
-  style: 0,           
-  use_speaker_boost: true
-};
-
-// Função ajustada para fazer a requisição via fetch
-async function textToSpeech(voiceId, text, voiceSettings, elevenlabsKey) {
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
-  const headers = {
-    'Content-Type': 'application/json',
-    'xi-api-key': elevenlabsKey
-  };
-  const data = {
-    text,
-    model_id: "eleven_multilingual_v2",
-    voice_settings: voiceSettings
-  };
-
-  return fetch(url, {
-    method: 'POST',
-    headers: headers,
-    body: JSON.stringify(data)
-  });
-}
-
-// Função para salvar o arquivo de áudio
-function saveAudioFile(response, outputPath) {
-  return new Promise((resolve, reject) => {
-    const fileStream = fs.createWriteStream(outputPath);
-    response.body.pipe(fileStream);
-    response.body.on('error', (error) => {
-      console.error('Erro ao salvar o arquivo de áudio:', error);
-      reject(error);
-    });
-    fileStream.on('finish', () => {
-      console.log(`Arquivo de áudio salvo: ${outputPath}`);
-      resolve();
-    });
-  });
-}
-
-// Função para tratar erro
-function handleError(err) {
-  console.error('Erro na API:', err);
-}
-
-// Ajuste da função sintetizarFalaEleven
-async function sintetizarFalaEleven(texto, nomeArquivo, voiceId) {
-  try {
-    // Extrai a chave da API ElevenLabs
-    const elevenlabsKey = readURL(0).elevenlabskey;
-
-    // Define o caminho do arquivo de saída no diretório audiosintetizado
-    const outputPath = path.join('audiosintetizado', `${nomeArquivo}.ogg`);
-
-    // Cria o diretório se não existir
-    if (!fs.existsSync('audiosintetizado')) {
-      fs.mkdirSync('audiosintetizado', { recursive: true });
-    }
-
-    // Realiza a solicitação para conversão de texto em fala
-    const response = await textToSpeech(voiceId, texto, voice_SETTINGS, elevenlabsKey);
-    
-    if (!response.ok) {
-      throw new Error(`Falha na API com status: ${response.status}`);
-    }
-
-    // Salva o arquivo de áudio
-    await saveAudioFile(response, outputPath);
-  } catch (error) {
-    handleError(error);
-    throw error; // Opcionalmente, re-lance o erro para tratamento adicional
-  }
-}
-
-// ElevenLabs
-
-async function converterArquivoOGGparaMP3(caminhoArquivoEntrada, nomeArquivoSaida) {
-return new Promise((resolve, reject) => {
-  const ffmpeg = spawn('ffmpeg', ['-y', '-i', caminhoArquivoEntrada, '-loglevel', '0', '-nostats', nomeArquivoSaida]);
-
-  ffmpeg.stderr.on('data', (data) => {
-    console.error(`stderr: ${data}`);
-  });
-
-  ffmpeg.on('close', (code) => {
-    if (code !== 0) {
-      reject(`Erro ao executar o comando, código de saída: ${code}`);
-    } else {
-      resolve(`Arquivo convertido com sucesso para o formato MP3: ${nomeArquivoSaida}`);
-    }
-  });
-});
-}
-
-async function runImage(promptText, base64Image) {
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4-vision-preview',
-    max_tokens: 4096,
-    messages: [
-      {
-        role: 'user',
-        content: [
-          { type: 'text', text: promptText },
-          {
-            type: 'image_url',
-            image_url: {
-              url: `data:image/jpeg;base64,${base64Image}`,
-            },
-          },
-        ],
-      },
-    ],
-  });
-
-  return response.choices[0].message.content;
-}
-
-async function getImageContent(filePath) {
-  try {
-      const imageData = fs.readFileSync(filePath);
-      return imageData;
-  } catch (error) {
-      console.error('Erro ao ler a imagem:', error);
-      throw error;
-  }
-}
-
-function encodeImage(imagePath) {
-  const imageBuffer = fs.readFileSync(imagePath);
-  return Buffer.from(imageBuffer).toString('base64');
-}
-
-async function processMessageIA(msg) {
-
-if (msg.hasMedia) {
-  const attachmentData = await msg.downloadMedia();
-  if(readNextAudio(msg.from) === false && attachmentData.mimetype === 'audio/ogg; codecs=opus'){
-    return;
-  }
-  if (readNextAudio(msg.from) === true && attachmentData.mimetype !== 'audio/ogg; codecs=opus' && !attachmentData.mimetype.startsWith('image/')){
-    return "Mídia não detectada.";
-  }
-  if (readNextAudio(msg.from) === true && attachmentData.mimetype === 'audio/ogg; codecs=opus'){
-    const audioFilePath = `./audiobruto/${msg.from.split('@c.us')[0]}.ogg`;
-
-    if (fs.existsSync(audioFilePath)) {
-      fs.unlinkSync(audioFilePath);
-    }
-
-    await writeFileAsync(audioFilePath, Buffer.from(attachmentData.data, 'base64'));
-
-    while (true) {
-      try {
-        if (fs.existsSync(audioFilePath)) {
-          await converterArquivoOGGparaMP3(audioFilePath, `./audioliquido/${msg.from.split('@c.us')[0]}.mp3`);
-          fs.unlinkSync(audioFilePath);
-          return await brokerMaster(runAudio, `./audioliquido/${msg.from.split('@c.us')[0]}.mp3`);
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } catch (err) {
-        console.error(err);
-        break;
-      }
-    }
-  }
-  if (readNextImage(msg.from) === true && attachmentData.mimetype.startsWith('image/')) {
-    const imageFilePath = `./imagemliquida/${msg.from.split('@c.us')[0]}.jpg`;
-
-    // Verifica se o arquivo já existe e, se sim, o remove
-    if (fs.existsSync(imageFilePath)) {
-      fs.unlinkSync(imageFilePath);
-    }
-
-    // Salva a imagem recebida em um arquivo
-    await writeFileAsync(imageFilePath, Buffer.from(attachmentData.data, 'base64'));
-
-    // Loop para garantir que a imagem foi salva antes de prosseguir
-    while (true) {
-      try {
-        if (fs.existsSync(imageFilePath)) {
-          // Codifica a imagem em base64
-          const base64Image = encodeImage(imageFilePath);          
-          // Obtém a resposta do Vision e retorna
-          return `Imagem enviada pelo usuário: ${await runImage(await readPrompt(msg.from), base64Image)}`;
-        }
-
-        // Aguarda um pouco antes de verificar novamente
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } catch (err) {
-        console.error(err);
-        break;
-      }
-    }
-  }  
-  if (readNextImage(msg.from) === false && attachmentData.mimetype.startsWith('image/')){
-    return;
-  }
-  } 
-  if (!msg.hasMedia) {
-  return msg.body;
-  }
-}
-
-async function tratarMidia(filePath) {
-  try {
-      const attachment = await fsp.readFile(filePath, { encoding: 'base64' });
-      const mimetype = getMimeType(filePath);
-      const filename = path.basename(filePath);
-
-      if (attachment) {
-          const media = new MessageMedia(mimetype, attachment, filename);
-          return media;
-      }
-  } catch (e) {
-      console.error(e);
-  }
-}
-
-async function tratarMidiaObj(message) {  
-  try {
-    let fileUrl = message.content.url; // URL do arquivo
-    let mimetype;
-    let filename;
-
-    // Use Axios para buscar o arquivo e determinar o MIME type.
-    const attachment = await axios.get(fileUrl, {
-      responseType: 'arraybuffer',
-    }).then(response => {
-      mimetype = response.headers['content-type'];
-      filename = fileUrl.split("/").pop();
-      return response.data.toString('base64');
-    });
-
-    if (attachment) {
-      const media = new MessageMedia(mimetype, attachment, filename);
-      return media;
-    }
-  } catch (e) {
-    console.error(e);
-  }  
-}
-
-function brokerMaster(requestFunction, ...args) {
-  const backoffDelay = 1000;
-  const maxRetries = 10;
-
-  return new Promise((resolve, reject) => {
-    const makeRequest = (retryCount) => {
-      requestFunction(...args)
-        .then((response) => {
-          resolve(response);
-        })
-        .catch((error) => {
-          if (retryCount === maxRetries) {
-            reject(error);
-            return;
-          }
-
-          const delay = backoffDelay * Math.pow(2, retryCount);
-          console.log(`Tentativa ${retryCount + 1} falhou. Tentando novamente em ${delay}ms...`);
-          console.log(error);
-          setTimeout(() => makeRequest(retryCount + 1), delay);
-        });
-    };
-
-    makeRequest(0);
-  });
-}
-
-//Mecanismo para produção de audio
-
-// Fim das funções AI
-
-// endpoint OpenAI
-
-app.post('/initOpenai', async (req, res) => {
-  const { key, token } = req.body;
-
-  // Se não for uma mensagem de gatilho e o token não for válido, retorna erro
-  if (!key.startsWith('sk-') && token !== SECURITY_TOKEN) {
-      return res.status(401).json({ status: 'falha', mensagem: 'Token inválido' });
-  }  
-
-  if (!client || !client.info) {
-      return res.status(402).json({status: 'falha', message: 'Cliente Não Autenticado'});
-  }    
-
-  try {
-      const opeanaikey = key;
-      initializeClientOpenAI(opeanaikey);
-      res.status(200).json({ status: 'sucesso', mensagem: 'Key OpenAI e Client registrado com sucesso'});
-  } catch (error) {
-      console.error(error);        
-      res.status(500).json({ status: 'falha', mensagem: 'Erro ao registrar Client OpenAI' });
-  }
-});
-
-app.post('/mediaAI', async (req, res) => {
-  const { path, token } = req.body;
-
-  // Validação do Token
-  if (token !== SECURITY_TOKEN) {
-      return res.status(401).json({ status: 'falha', mensagem: 'Token inválido' });
-  }
-
-  // Verifica se o arquivo existe
-  if (!fs.existsSync(path)) {
-      return res.status(404).json({ status: 'falha', mensagem: 'Arquivo não encontrado' });
-  }
-
-  try {
-      let resultado = '';
-
-      // Processamento para Áudio
-      if (path.endsWith('.ogg')) {
-          const audioFilePath = path;
-          const mp3FilePath = `./audioliquido/${path.split('/').pop().replace('.ogg', '.mp3')}`;
-
-          await converterArquivoOGGparaMP3(audioFilePath, mp3FilePath);
-          fs.unlinkSync(audioFilePath); // Remove o arquivo OGG original após conversão
-          resultado = await brokerMaster(runAudio, mp3FilePath);
-      }
-      // Processamento para Imagem
-      else if (path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png')) {
-          const imageFilePath = path;
-          const base64Image = encodeImage(imageFilePath);
-          resultado = `Imagem enviada pelo usuário: ${await runImage(await readPrompt(path), base64Image)}`;
-      } else {
-          return res.status(400).json({ status: 'falha', mensagem: 'Tipo de arquivo não suportado' });
-      }
-
-      res.status(200).json({ status: 'sucesso', mensagem: resultado });
-  } catch (err) {
-      console.error(err);
-      res.status(500).json({ status: 'falha', mensagem: 'Erro ao processar arquivo' });
-  }
-});
-
-app.post('/audioOpenAI', async (req, res) => {
-  const { destinatario, mensagem, token } = req.body;
-
-  // Verificar o token
+// Endpoint /extensaoTypezap
+app.post('/extensaoTypezap', async (req, res) => {
+  const { token } = req.body;
+
+  // Verifica se o token fornecido é válido
   if (token !== SECURITY_TOKEN) {
       return res.status(401).json({ status: 'falha', mensagem: 'Token inválido' });
   }
 
   try {
-      // Sintetizar a fala
-      const audioPath = await brokerMaster(sintetizarFalaOpenAI, mensagem, destinatario);
-
-      if (!audioPath) {
-          throw new Error('Falha ao sintetizar o áudio');
-      }
-
-      // Prepara o arquivo de áudio para ser enviado
-      const media = { // Supondo que isso é o que o seu método espera
-          mimetype: 'audio/ogg', // Ajuste conforme o formato real
-          data: fs.readFileSync(audioPath).toString('base64'),
-          filename: path.basename(audioPath)
-      };
-
-      const destinatarioId = await client.getNumberId(destinatario);
-    
-        if (destinatarioId) {
-            // Obtém o chat pelo ID do destinatário.
-            const chat = await client.getChatById(destinatarioId._serialized);
-    
-            // Simula gravação de áudio no chat.
-            await chat.sendStateRecording();    
-            
-            await sendMessageWithRetry(destinatario, media);
-        } else {
-            // Enviar áudio
-            await sendMessageWithRetry(destinatario, media);
-        }
-
-      // Limpa o arquivo temporário após o envio
-      fs.unlinkSync(audioPath);
-
-      res.json({ status: 'sucesso', mensagem: 'Áudio enviado com sucesso' });
+      // Obtém os registros do banco de dados
+      const dbTriggers = listAllFromDBTypebotV2();
+      
+      // Responde com os registros obtidos
+      res.status(200).json(dbTriggers);
   } catch (error) {
       console.error(error);
-      res.status(500).json({ status: 'falha', mensagem: 'Erro ao enviar áudio' });
-  }
-});
-
-app.post('/audioElevenLabs', async (req, res) => {
-  const { destinatario, mensagem, token } = req.body;
-
-  // Verificar o token
-  if (token !== SECURITY_TOKEN) {
-      return res.status(401).json({ status: 'falha', mensagem: 'Token inválido' });
-  }
-
-  try {
-      // Extrai o nome da voz e o texto a ser sintetizado do comando
-      const audioPath = await brokerMaster(sintetizarFalaEleven, mensagem, destinatario);
-
-      if (!audioPath) {
-          throw new Error('Falha ao sintetizar o áudio com ElevenLabs');
-      }
-
-      // Trata o arquivo de áudio se necessário
-      const media = await tratarMidia(audioPath);
-
-      const destinatarioId = await client.getNumberId(destinatario);
-    
-        if (destinatarioId) {
-            // Obtém o chat pelo ID do destinatário.
-            const chat = await client.getChatById(destinatarioId._serialized);
-    
-            // Simula gravação de áudio no chat.
-            await chat.sendStateRecording();    
-            
-            await sendMessageWithRetry(destinatario, media);
-        } else {
-            // Enviar áudio
-            await sendMessageWithRetry(destinatario, media);
-        }
-
-      // Limpa o arquivo temporário após o envio
-      fs.unlinkSync(audioPath);
-
-      res.json({ status: 'sucesso', mensagem: 'Áudio enviado com sucesso' });
-  } catch (error) {
-      console.error('Erro ao enviar áudio com ElevenLabs:', error);
-      res.status(500).json({ status: 'falha', mensagem: 'Erro ao enviar áudio' });
-  }
-});
-
-// Função auxiliar para esperar a imagem estar pronta
-function waitForImage(filePath, maxAttempts, interval) {
-  let attempts = 0;
-
-  return new Promise((resolve, reject) => {
-      const checkImage = () => {
-          Jimp.read(filePath)
-              .then(() => resolve())
-              .catch(() => {
-                  if (attempts < maxAttempts) {
-                      attempts++;
-                      console.log(`A imagem ainda está sendo processada... Tentativa ${attempts}/${maxAttempts}`);
-                      setTimeout(checkImage, interval);
-                  } else {
-                      reject(new Error('A imagem não foi processada a tempo.'));
-                  }
-              });
-      };
-
-      checkImage();
-  });
-}
-
-app.post('/imagemOpenAI', async (req, res) => {
-  const { destinatario, mensagem, token } = req.body;
-
-  if (token !== SECURITY_TOKEN) {
-      return res.status(401).json({ status: 'falha', mensagem: 'Token inválido' });
-  }
-
-  const imagePath = path.resolve(__dirname, 'imagemliquida');
-  const imageName = destinatario.split('@c.us')[0];
-
-  try {
-      const filePath = await brokerMaster(runDallE, mensagem, imagePath, imageName);
-
-      // Espera até que a imagem esteja completamente processada
-      await waitForImage(filePath, 5, 2000); // Tenta por no máximo 5 vezes, esperando 2 segundos entre as tentativas
-
-      const media = await tratarMidia(filePath);
-      await sendMessageWithRetry(destinatario, media);
-
-      fs.unlinkSync(filePath);
-      res.json({ status: 'sucesso', mensagem: 'Imagem enviada com sucesso' });
-  } catch (error) {
-      console.error('Erro durante o processo:', error);
-      res.status(500).json({ status: 'falha', mensagem: 'Erro ao enviar imagem' });
+      res.status(500).json({ status: 'falha', mensagem: 'Erro ao obter dados do banco de dados' });
   }
 });
 
@@ -1106,7 +436,7 @@ app.post('/media', async (req, res) => {
             // Simula gravação de áudio no chat.
             await chat.sendStateRecording();    
             
-            await sendMessageWithRetry(destinatario, media);
+            await sendAudioWithRetry(destinatario, media);            
         } else {
             console.log('Número não está registrado no WhatsApp.');
         }
