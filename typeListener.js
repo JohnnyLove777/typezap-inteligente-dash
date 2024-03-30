@@ -34,8 +34,6 @@ const portSend = 8888;
     }
 });*/
 
-const wwebVersion = '2.2412.50';
-
 //Kit com os comandos otimizados para nuvem Ubuntu Linux (créditos Pedrinho da Nasa Comunidade ZDG)
 const client = new Client({
   authStrategy: new LocalAuth({ clientId: sessao }),
@@ -60,10 +58,6 @@ const client = new Client({
       '--single-process', // <- Este não funciona no Windows, apague caso suba numa máquina Windows
       '--disable-gpu'
     ]
-  },
-  webVersionCache: {
-    type: 'remote',
-    remotePath: `https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/${wwebVersion}.html`,
   }
 });
 

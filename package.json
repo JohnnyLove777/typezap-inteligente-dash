@@ -17,7 +17,7 @@
     "qrcode-terminal": "latest",
     "socket.io": "^4.7.4",
     "uuid": "latest",
-    "whatsapp-web.js": "github:alechkos/whatsapp-web.js#polls-ext",
+    "whatsapp-web.js": "github:pedroslopez/whatsapp-web.js#webpack-exodus",
     "ws": "^7.4.6"
   },
   "devDependencies": {
