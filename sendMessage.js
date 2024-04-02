@@ -156,21 +156,21 @@ const client = new Client({
 });
 
   async function sendMessageWithRetry(phoneNumber, messageToSend) {
-    try {
+    //try {
         await client.sendMessage(phoneNumber, messageToSend);      
-    } catch (error) {
-        console.error(`Falha ao enviar mensagem para ${phoneNumber}: erro: ${error}`);        
-    }
+    //} catch (error) {
+    //    console.error(`Falha ao enviar mensagem para ${phoneNumber}: erro: ${error}`);        
+    //}
   }
 
   async function sendAudioWithRetry(phoneNumber, messageToSend) {
-    try {
+    //try {
         //const audiob01 = MessageMedia.fromFilePath('./b01.opus'); // Arquivo de audio em ogg gravado
         //await client.sendMessage(msg.from, audiob01, {sendAudioAsVoice: true}); // enviando o audio16 
         await client.sendMessage(phoneNumber, messageToSend, {sendAudioAsVoice: true});      
-    } catch (error) {
-        console.error(`Falha ao enviar audio para ${phoneNumber}: erro: ${error}`);        
-    }
+    //} catch (error) {
+    //    console.error(`Falha ao enviar audio para ${phoneNumber}: erro: ${error}`);        
+    //}
   }
 
   async function extrairGrupo(grupoId) {
@@ -187,7 +187,7 @@ const client = new Client({
   }
 
   async function sendMessageWithMention(phoneNumber, originalMessage, chat) {
-    try {        
+    //try {        
         let messageToSend = originalMessage.replace('!citartodos', '').trim();        
         if (phoneNumber.endsWith('@g.us')) {           
           const contatos = [];  
@@ -205,9 +205,9 @@ const client = new Client({
                 mentions: [phoneNumber]
             });
         }
-    } catch (error) {
-        console.error(`Falha ao enviar mensagem para ${phoneNumber}: erro: ${error}`);        
-    }
+    //} catch (error) {
+    //    console.error(`Falha ao enviar mensagem para ${phoneNumber}: erro: ${error}`);        
+    //}
 }
 
 
