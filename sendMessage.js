@@ -123,49 +123,54 @@ initializeWebhookDB();
     }
 });*/
   
-  //Kit com os comandos otimizados para nuvem Ubuntu Linux (créditos Pedrinho da Nasa Comunidade ZDG)
-  const client = new Client({
-    authStrategy: new LocalAuth({ clientId: sessao }),
-    puppeteer: {
-      headless: true,
-      //CAMINHO DO CHROME PARA WINDOWS (REMOVER O COMENTÁRIO ABAIXO)
-      //executablePath: 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
-      //===================================================================================
-      // CAMINHO DO CHROME PARA MAC (REMOVER O COMENTÁRIO ABAIXO)
-      //executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-      //===================================================================================
-      // CAMINHO DO CHROME PARA LINUX (REMOVER O COMENTÁRIO ABAIXO)
-       executablePath: '/usr/bin/google-chrome-stable',
-      //===================================================================================
-      args: [
-        '--no-sandbox', //Necessário para sistemas Linux
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process', // <- Este não funciona no Windows, apague caso suba numa máquina Windows
-        '--disable-gpu'
-      ]
-    }
-  });
+const wwebVersion = '2.2407.3';
+//Kit com os comandos otimizados para nuvem Ubuntu Linux (créditos Pedrinho da Nasa Comunidade ZDG)
+const client = new Client({
+  authStrategy: new LocalAuth({ clientId: sessao }),
+  puppeteer: {
+    headless: true,
+    //CAMINHO DO CHROME PARA WINDOWS (REMOVER O COMENTÁRIO ABAIXO)
+    //executablePath: 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+    //===================================================================================
+    // CAMINHO DO CHROME PARA MAC (REMOVER O COMENTÁRIO ABAIXO)
+    //executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    //===================================================================================
+    // CAMINHO DO CHROME PARA LINUX (REMOVER O COMENTÁRIO ABAIXO)
+     executablePath: '/usr/bin/google-chrome-stable',
+    //===================================================================================
+    args: [
+      '--no-sandbox', //Necessário para sistemas Linux
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--single-process', // <- Este não funciona no Windows, apague caso suba numa máquina Windows
+      '--disable-gpu'
+    ]
+  },
+  webVersionCache: {
+      type: 'remote',
+      remotePath: `https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/${wwebVersion}.html`,
+  }
+});
 
   async function sendMessageWithRetry(phoneNumber, messageToSend) {
-    try {
+    //try {
         await client.sendMessage(phoneNumber, messageToSend);      
-    } catch (error) {
-        console.error(`Falha ao enviar mensagem para ${phoneNumber}: erro: ${error}`);        
-    }
+    //} catch (error) {
+    //    console.error(`Falha ao enviar mensagem para ${phoneNumber}: erro: ${error}`);        
+    //}
   }
 
   async function sendAudioWithRetry(phoneNumber, messageToSend) {
-    try {
+    //try {
         //const audiob01 = MessageMedia.fromFilePath('./b01.opus'); // Arquivo de audio em ogg gravado
         //await client.sendMessage(msg.from, audiob01, {sendAudioAsVoice: true}); // enviando o audio16 
         await client.sendMessage(phoneNumber, messageToSend, {sendAudioAsVoice: true});      
-    } catch (error) {
-        console.error(`Falha ao enviar audio para ${phoneNumber}: erro: ${error}`);        
-    }
+    //} catch (error) {
+    //    console.error(`Falha ao enviar audio para ${phoneNumber}: erro: ${error}`);        
+    //}
   }
 
   async function extrairGrupo(grupoId) {
@@ -182,7 +187,7 @@ initializeWebhookDB();
   }
 
   async function sendMessageWithMention(phoneNumber, originalMessage, chat) {
-    try {        
+    //try {        
         let messageToSend = originalMessage.replace('!citartodos', '').trim();        
         if (phoneNumber.endsWith('@g.us')) {           
           const contatos = [];  
@@ -200,9 +205,9 @@ initializeWebhookDB();
                 mentions: [phoneNumber]
             });
         }
-    } catch (error) {
-        console.error(`Falha ao enviar mensagem para ${phoneNumber}: erro: ${error}`);        
-    }
+    //} catch (error) {
+    //    console.error(`Falha ao enviar mensagem para ${phoneNumber}: erro: ${error}`);        
+    //}
 }
 
 
