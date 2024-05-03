@@ -11,6 +11,7 @@ const http = require('http');
 const https = require('https');
 const app = express();
 const server = http.createServer(app);
+const pm2 = require('pm2');
 const wss = new WebSocket.Server({ server });
 //const qrcode = require('qrcode-terminal');
 const path = require('path');
