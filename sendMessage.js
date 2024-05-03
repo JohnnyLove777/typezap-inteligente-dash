@@ -123,7 +123,7 @@ initializeWebhookDB();
     }
 });*/
   
-const wwebVersion = '2.2407.3';
+const wwebVersion = '2.2412.50';
 //Kit com os comandos otimizados para nuvem Ubuntu Linux (créditos Pedrinho da Nasa Comunidade ZDG)
 const client = new Client({
   authStrategy: new LocalAuth({ clientId: sessao }),
@@ -149,10 +149,11 @@ const client = new Client({
       '--disable-gpu'
     ]
   },
+  /*webVersion: '2.2412.50',
   webVersionCache: {
       type: 'remote',
       remotePath: `https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/${wwebVersion}.html`,
-  }
+  }*/
 });
 
   async function sendMessageWithRetry(phoneNumber, messageToSend) {
@@ -222,7 +223,7 @@ const client = new Client({
   });
     
   // Evento 'qr' - já fornecido anteriormente
-client.on('qr', qr => {
+  client.on('qr', qr => {
     console.log('qr gerado');
     QRCode.toDataURL(qr, { errorCorrectionLevel: 'H' }, (err, url) => {
       if (err) {
@@ -235,14 +236,114 @@ client.on('qr', qr => {
   
   // Evento 'ready'
   client.on('ready', () => {
+    updateReloggin(sessao, true);
     console.log('API de endpoint sendMessage pronta e conectada.');
     io.emit('connection-ready', 'API pronta e conectada.');
   });
   
   // Evento 'authenticated'
+
+  const DATABASE_FILE_RELOGGIN = 'relogginDB.json';
+
+  function readJSONFile(nomeArquivo) {
+    if (fs.existsSync(nomeArquivo)) {
+      const dados = fs.readFileSync(nomeArquivo);
+      return JSON.parse(dados);
+    } else {
+      return [];
+    }
+  }
+  
+  function writeJSONFile(nomeArquivo, dados) {
+    const dadosJSON = JSON.stringify(dados, null, 2);
+    fs.writeFileSync(nomeArquivo, dadosJSON);
+  }
+
+function addReloggin(sessionid, reconnect) {
+  const relogginData = readJSONFile(DATABASE_FILE_RELOGGIN);
+
+  const existingEntry = relogginData.find(entry => entry.sessionid === sessionid);
+  if (existingEntry) {
+    throw new Error('A entrada para esta sessão já existe no banco de dados.');
+  }
+
+  const newEntry = { sessionid, reconnect };
+  relogginData.push(newEntry);
+  writeJSONFile(DATABASE_FILE_RELOGGIN, relogginData);
+}
+
+function readReloggin(sessionid) {
+  const relogginData = readJSONFile(DATABASE_FILE_RELOGGIN);
+  const entry = relogginData.find(entry => entry.sessionid === sessionid);
+  return entry ? entry.reconnect : undefined;
+}
+
+function updateReloggin(sessionid, reconnect) {
+  const relogginData = readJSONFile(DATABASE_FILE_RELOGGIN);
+  const entryIndex = relogginData.findIndex(entry => entry.sessionid === sessionid);
+  if (entryIndex !== -1) {
+    relogginData[entryIndex].reconnect = reconnect;
+    writeJSONFile(DATABASE_FILE_RELOGGIN, relogginData);
+  }
+}
+
+function deleteReloggin(sessionid) {
+  const relogginData = readJSONFile(DATABASE_FILE_RELOGGIN);
+  const updatedData = relogginData.filter(entry => entry.sessionid !== sessionid);
+  writeJSONFile(DATABASE_FILE_RELOGGIN, updatedData);
+}
+
+function existsReloggin(sessionid) {
+  const relogginData = readJSONFile(DATABASE_FILE_RELOGGIN);
+  return relogginData.some(entry => entry.sessionid === sessionid);
+}
+
+  const exec = require('child_process').exec;
+
+  if(!existsReloggin(sessao)){
+    addReloggin(sessao,false);
+  }
+
+// Conectando ao daemon do PM2
+pm2.connect((err) => {
+    if (err) {
+        console.error('Erro ao conectar-se ao PM2:', err);
+        process.exit(1);
+    }
+
+    // Adicionamos os eventos de captura
+    pm2.launchBus((err, bus) => {
+        if (err) {
+            console.error('Erro ao lançar o bus do PM2:', err);
+            process.exit(1);
+        }
+
+        // Listener para o evento de erro
+        bus.on('log:err', (data) => {
+            if (data.process.name === 'sendMessage') {                
+
+                if (!readReloggin(sessao)) {
+                    io.emit('authenticated', 'Autenticação bem-sucedida, reiniciando server (Exodus fix).');
+                    // Delay 10 segundos para iniciar o restart
+                    //updateReloggin(sessao, true);
+                    setTimeout(() => {
+                        pm2.restart('sendMessage', (err) => {
+                            if (err) {
+                                console.error('Erro ao tentar reiniciar o sendMessage:', err);
+                                return;
+                            }
+                            console.log('sendMessage reiniciado com sucesso.');
+                        });
+                    }, 10000); // 10 segundos
+                }
+            }
+        });
+    });
+});
+  
   client.on('authenticated', () => {
-    console.log('Autenticação bem-sucedida.');
-    io.emit('authenticated', 'Autenticação bem-sucedida.');
+      console.log('Autenticação bem-sucedida.');      
+      io.emit('authenticated', 'Autenticação bem-sucedida.');
   });
   
   client.on('disconnected', (reason) => {
@@ -250,10 +351,7 @@ client.on('qr', qr => {
     io.emit('disconnected', `Cliente desconectado: ${reason}`);
 
     if (reason === 'NAVIGATION') {
-        console.log('Reconectando instância e gerando novo QR code...');
-        client.destroy().then(() => {
-            client.initialize(); // Inicia uma nova instância
-        });
+      updateReloggin(sessao, false);
     } else {
         console.log('Razão de desconexão não requer a geração de um novo QR code.');
     }
