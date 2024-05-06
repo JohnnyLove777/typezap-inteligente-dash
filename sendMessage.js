@@ -10,6 +10,7 @@ const cors = require('cors');
 const fs = require('fs');
 const { Client, Buttons, List, MessageMedia, LocalAuth } = require('whatsapp-web.js');
 require('dotenv').config();
+const pm2 = require('pm2');
 
 // Gere o seu token 32 caracteres
 const SECURITY_TOKEN = "a9387747d4069f22fca5903858cdda24";
