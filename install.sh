@@ -37,8 +37,6 @@ sudo apt install gdebi -y
 # Baixar e instalar o Google Chrome
 echo "Baixando e instalando Google Chrome..."
 wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-sudo gdebi google-chrome-stable_current_amd64.deb -n
-sudo apt-get -f install -y
 
 # Instalar PM2 globalmente
 echo "Instalando PM2..."
@@ -56,7 +54,12 @@ sudo ufw allow 8083
 echo "Instalando dependências do projeto..."
 npm install
 npm run install-deps
+
+sudo apt-get install libasound2t64
 sudo apt install ffmpeg
+
+sudo gdebi google-chrome-stable_current_amd64.deb -n
+sudo apt-get -f install -y
 
 # Iniciar a aplicação usando PM2
 echo "Iniciando a aplicação com PM2..."
