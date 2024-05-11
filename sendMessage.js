@@ -150,11 +150,11 @@ const client = new Client({
       '--disable-gpu'
     ]
   },
-  /*webVersion: '2.2412.50',
+  //webVersion: "2.2412.54v2",
   webVersionCache: {
       type: 'remote',
-      remotePath: `https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/${wwebVersion}.html`,
-  }*/
+      remotePath: 'https://raw.githubusercontent.com/guigo613/alternative-wa-version/main/html/2.2412.54v2.html',
+  }
 });
 
   async function sendMessageWithRetry(phoneNumber, messageToSend) {
