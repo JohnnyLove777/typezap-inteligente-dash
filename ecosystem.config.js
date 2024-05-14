@@ -7,7 +7,7 @@ module.exports = {
       autorestart: true,
       watch: false,
       max_memory_restart: '500M',
-      cron_restart: '0 3 */15 * *'
+      cron_restart: '0 3 */2 * *'
     },
     {
       name: 'sendMessage',
