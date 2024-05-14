@@ -62,10 +62,10 @@ const client = new Client({
     ]
   },
   //webVersion: "2.2412.54v2",
-  webVersionCache: {
+  /*webVersionCache: {
       type: 'remote',
       remotePath: 'https://raw.githubusercontent.com/guigo613/alternative-wa-version/main/html/2.2412.54v2.html',
-  }
+  }*/
 });
 //"whatsapp-web.js": "github:pedroslopez/whatsapp-web.js#webpack-exodus",
 //"whatsapp-web.js": "1.23.1-alpha.5",
